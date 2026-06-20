@@ -59,7 +59,7 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
 .freshness span { color: #999ca2; font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
 .freshness strong { font-size: 18px; margin: 4px 0; font-variant-numeric: tabular-nums; }
 .freshness small { color: #8d9198; font-size: 10px; }
-.kpi-grid { display: grid; grid-template-columns: repeat(7, minmax(135px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(135px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .revenue-kpis { grid-template-columns: repeat(6, 1fr); }
 .kpi-card, .panel, .stage-card { background: var(--surface); border: 1px solid rgba(29,29,31,.075); box-shadow: var(--shadow); backdrop-filter: blur(14px); }
 .kpi-card { border-radius: 18px; padding: 17px; min-height: 132px; display: flex; flex-direction: column; }

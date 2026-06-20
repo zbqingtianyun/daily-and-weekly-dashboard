@@ -1,6 +1,6 @@
 import type { DashboardRow, MetricDefinition, MetricFormat } from "./types";
 
-export const KPI_KEYS = ["DAU", "激活人数", "新用户次日留存率", "平均单日使用时长（分）", "总付费人数", "总付费金额", "客单价"];
+export const KPI_KEYS = ["DAU", "活跃用户14日留存率", "平均单日使用时长（分）", "总付费人数", "总付费金额", "客单价"];
 
 export function formatMetric(value: unknown, format: MetricFormat, compact = false) {
   if (value === null || value === undefined || value === "") return "暂无数据";
