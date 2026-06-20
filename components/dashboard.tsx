@@ -40,6 +40,11 @@ const VIEWS: Record<View, { eyebrow: string; title: string; description: string 
   conversion: { eyebrow: "JOURNEY SIGNAL", title: "业务转化", description: "按真实字段查看业务阶段与转化率，不制造虚假的严格漏斗。" }
 };
 
+function formatChineseDate(period: string) {
+  const [year, month, day] = period.split("-").map(Number);
+  return `${year}年${month}月${day}日`;
+}
+
 function baseChart(): EChartsOption {
   return {
     animationDuration: 650,
@@ -255,17 +260,14 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
   const sourceRows = grain === "day" ? daily.rows : weekly.rows;
   const firstPeriod = sourceRows[0].period;
   const lastPeriod = sourceRows.at(-1)!.period;
-  const [start, setStart] = useState(parseQueryDate(params.get("from"), sourceRows[Math.max(0, sourceRows.length - (grain === "day" ? 29 : 10))].period));
-  const [end, setEnd] = useState(parseQueryDate(params.get("to"), lastPeriod));
+  const initialDailyPeriod = parseQueryDate(params.get("to") ?? params.get("from"), lastPeriod);
+  const [start, setStart] = useState(grain === "day"
+    ? initialDailyPeriod
+    : parseQueryDate(params.get("from"), sourceRows[Math.max(0, sourceRows.length - 10)].period));
+  const [end, setEnd] = useState(grain === "day" ? initialDailyPeriod : parseQueryDate(params.get("to"), lastPeriod));
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const definitions = useMemo(() => metricMap(catalog), [catalog]);
-
-  useEffect(() => {
-    const nextRows = grain === "day" ? daily.rows : weekly.rows;
-    setStart(nextRows[Math.max(0, nextRows.length - (grain === "day" ? 29 : 10))].period);
-    setEnd(nextRows.at(-1)!.period);
-  }, [daily.rows, grain, weekly.rows]);
 
   const updateUrl = useCallback((updates: Record<string, string>) => {
     const next = new URLSearchParams(params.toString());
@@ -287,7 +289,8 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
 
   const rows = useMemo(() => sourceRows.filter((row) => row.period >= start && row.period <= end), [end, sourceRows, start]);
   const current = rows.at(-1) ?? sourceRows.at(-1)!;
-  const previous = rows.at(-2) ?? sourceRows.at(-2);
+  const currentIndex = sourceRows.findIndex((row) => row.period === current.period);
+  const previous = currentIndex > 0 ? sourceRows[currentIndex - 1] : undefined;
   const latest = sourceRows.at(-1)!.period;
   const weeklyMode = grain === "week";
   const searched = catalog.filter((metric) => `${metric.label}${metric.key}${metric.description}`.toLowerCase().includes(search.toLowerCase())).slice(0, 12);
@@ -298,8 +301,13 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
   };
 
   const switchGrain = (next: Grain) => {
+    const nextRows = next === "day" ? daily.rows : weekly.rows;
+    const nextEnd = nextRows.at(-1)!.period;
+    const nextStart = next === "day" ? nextEnd : nextRows[Math.max(0, nextRows.length - 10)].period;
     setGrain(next);
-    updateUrl({ view, grain: next });
+    setStart(nextStart);
+    setEnd(nextEnd);
+    updateUrl({ view, grain: next, from: nextStart, to: nextEnd });
   };
 
   const setRange = (from: string, to: string) => {
@@ -332,14 +340,31 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
               <button className={grain === "day" ? "active" : ""} onClick={() => switchGrain("day")}>日报</button>
               <button className={grain === "week" ? "active" : ""} onClick={() => switchGrain("week")}>周报</button>
             </div>
-            <label className="date-control"><CalendarDays size={16} /><input type="date" min={firstPeriod} max={end} value={start} onChange={(event) => setRange(event.target.value, end)} /><span>—</span><input type="date" min={start} max={lastPeriod} value={end} onChange={(event) => setRange(start, event.target.value)} /></label>
+            {grain === "day" ? (
+              <label className="date-control single-date">
+                <CalendarDays size={16} />
+                <span>查看日期</span>
+                <input aria-label="日报日期" type="date" min={firstPeriod} max={lastPeriod} value={end} onChange={(event) => setRange(event.target.value, event.target.value)} />
+              </label>
+            ) : (
+              <label className="date-control range-date">
+                <CalendarDays size={16} />
+                <input aria-label="周报开始日期" type="date" min={firstPeriod} max={end} value={start} onChange={(event) => setRange(event.target.value, end)} />
+                <span>—</span>
+                <input aria-label="周报结束日期" type="date" min={start} max={lastPeriod} value={end} onChange={(event) => setRange(start, event.target.value)} />
+              </label>
+            )}
           </div>
         </header>
 
         <div className="content">
           <motion.header className="page-heading" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <div><p className="eyebrow">{VIEWS[view].eyebrow}</p><h1>{VIEWS[view].title}</h1><p>{VIEWS[view].description}</p></div>
-            <div className="freshness"><span>最新数据</span><strong>{latest}</strong><small>{weeklyMode ? "周内日均口径" : "自然日口径"} · 快照生成于 {new Date(metadata.generatedAt).toLocaleString("zh-CN")}</small></div>
+            <div className="freshness">
+              <span>{weeklyMode ? "所选周期截至" : "当前查看日期"}</span>
+              <strong>{weeklyMode ? end : formatChineseDate(current.period)}</strong>
+              <small>{weeklyMode ? "周内日均口径" : `自然日口径 · 数据最新至 ${latest}`} · 快照生成于 {new Date(metadata.generatedAt).toLocaleString("zh-CN")}</small>
+            </div>
           </motion.header>
 
           <AnimatePresence mode="wait">

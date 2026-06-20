@@ -151,7 +151,6 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
   .span-4,.span-5,.span-6,.span-7,.span-8 { grid-column: span 12; }
   .topbar { padding-inline: 22px; }
   .content { padding-inline: 22px; }
-  .date-control { display: none; }
 }
 @media (max-width: 640px) {
   .app-shell { display: block; }
@@ -162,6 +161,11 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
   .topbar { height: 70px; padding: 0 14px; }
   .search-trigger { min-width: auto; width: 44px; padding: 11px; }
   .search-trigger span,.search-trigger kbd { display: none; }
+  .top-controls { gap: 6px; }
+  .single-date { padding: 8px; gap: 4px; }
+  .single-date > svg,.single-date > span { display: none; }
+  .single-date input { width: 104px; }
+  .range-date { display: none; }
   .content { padding: 28px 14px 100px; }
   .page-heading { display: block; }
   .freshness { align-items: flex-start; text-align: left; margin-top: 20px; }
