@@ -277,24 +277,50 @@ function DailyDualAxisTrendChart({
   );
 }
 
-function KpiCard({ metric, current, previous, mature = true, comparisonLabel = "上一周期" }: { metric: MetricDefinition; current: unknown; previous: unknown; mature?: boolean; comparisonLabel?: string }) {
-  const change = mature ? delta(current, previous) : null;
+function KpiCard({
+  metric,
+  current,
+  previous,
+  mature = true,
+  comparisonMature = true,
+  currentLabel,
+  comparisonLabel
+}: {
+  metric: MetricDefinition;
+  current: unknown;
+  previous?: unknown;
+  mature?: boolean;
+  comparisonMature?: boolean;
+  currentLabel?: string;
+  comparisonLabel?: string;
+}) {
+  const comparisonEnabled = comparisonLabel !== undefined;
+  const change = mature && comparisonMature && comparisonEnabled ? delta(current, previous) : null;
   return (
-    <motion.article className="kpi-card" whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
+    <motion.article className={`kpi-card${comparisonEnabled ? " comparing" : ""}`} whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
       <div className="kpi-top">
         <span>{metric.label}</span>
         <span className="metric-dot" />
       </div>
-      <strong>{mature ? formatMetric(current, metric.format, true) : "待成熟"}</strong>
-      <div className="kpi-foot">
-        {change === null ? <span className="muted">{mature ? "暂无可比周期" : `${metric.maturityDays} 日成熟窗口`}</span> : (
-          <span className={change >= 0 ? "delta up" : "delta down"}>
-            {change >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-            {Math.abs(change * 100).toFixed(1)}%
-          </span>
-        )}
-        <span>较 {comparisonLabel}</span>
-      </div>
+      {comparisonEnabled ? (
+        <>
+          <div className="kpi-comparison-values">
+            <div><span>{currentLabel}</span><strong>{mature ? formatMetric(current, metric.format, true) : "待成熟"}</strong></div>
+            <div><span>{comparisonLabel}</span><strong>{comparisonMature ? formatMetric(previous, metric.format, true) : "待成熟"}</strong></div>
+          </div>
+          <div className="kpi-foot">
+            {change === null ? <span className="muted">暂无可比数据</span> : (
+              <span className={change >= 0 ? "delta up" : "delta down"}>
+                {change >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                {Math.abs(change * 100).toFixed(1)}%
+              </span>
+            )}
+            <span>日期对比</span>
+          </div>
+        </>
+      ) : (
+        <strong>{mature ? formatMetric(current, metric.format, true) : "待成熟"}</strong>
+      )}
     </motion.article>
   );
 }
@@ -308,14 +334,15 @@ function FunnelCard({
 }: {
   title: string;
   stages: { key: string; label: string; value: number | null }[];
-  comparisonStages: { key: string; label: string; value: number | null }[];
+  comparisonStages?: { key: string; label: string; value: number | null }[];
   currentLabel: string;
-  comparisonLabel: string;
+  comparisonLabel?: string;
 }) {
+  const comparisonEnabled = comparisonStages !== undefined && comparisonLabel !== undefined;
   const rates = stages.slice(1).map((stage, index) => conversionRate(stage.value, stages[index].value));
-  const comparisonRates = comparisonStages.slice(1).map((stage, index) => conversionRate(stage.value, comparisonStages[index].value));
+  const comparisonRates = comparisonStages?.slice(1).map((stage, index) => conversionRate(stage.value, comparisonStages[index].value)) ?? [];
   const overallRate = conversionRate(stages.at(-1)?.value, stages[0].value);
-  const comparisonOverallRate = conversionRate(comparisonStages.at(-1)?.value, comparisonStages[0].value);
+  const comparisonOverallRate = comparisonStages ? conversionRate(comparisonStages.at(-1)?.value, comparisonStages[0].value) : null;
   const formatFunnelValue = (value: number | null) => value === null || !Number.isFinite(value) ? "待成熟" : formatMetric(value, "integer");
   const formatFunnelRate = (value: number | null) => value === null ? "待成熟" : `${(value * 100).toFixed(1)}%`;
   return (
@@ -325,10 +352,17 @@ function FunnelCard({
           <h2>{title}</h2>
           <p>阶段统计口径可能不严格包含</p>
         </div>
-        <div className="funnel-overall">
-          <span>整体转化率</span>
-          <strong>{formatFunnelRate(overallRate)}</strong>
-          <small>{comparisonLabel}：{formatFunnelRate(comparisonOverallRate)}</small>
+        <div className={`funnel-overall-grid${comparisonEnabled ? " comparing" : ""}`}>
+          <div className="funnel-overall">
+            <span>{comparisonEnabled ? currentLabel : "整体转化率"}</span>
+            <strong>{formatFunnelRate(overallRate)}</strong>
+          </div>
+          {comparisonEnabled && (
+            <div className="funnel-overall comparison">
+              <span>{comparisonLabel}</span>
+              <strong>{formatFunnelRate(comparisonOverallRate)}</strong>
+            </div>
+          )}
         </div>
       </header>
       <div className="funnel-body">
@@ -337,15 +371,15 @@ function FunnelCard({
             <div className={`funnel-stage funnel-stage-${index + 1}`} style={{ width: `${100 - index * (stages.length === 2 ? 32 : 22)}%` }}>
               <span>{stage.label}</span>
               <div className="funnel-stage-values">
-                <strong>{formatFunnelValue(stage.value)}</strong>
-                <small>{comparisonLabel}：{formatFunnelValue(comparisonStages[index]?.value ?? null)}</small>
+                <div><small>{comparisonEnabled ? currentLabel : ""}</small><strong>{formatFunnelValue(stage.value)}</strong></div>
+                {comparisonEnabled && <div><small>{comparisonLabel}</small><strong>{formatFunnelValue(comparisonStages[index]?.value ?? null)}</strong></div>}
               </div>
             </div>
             {index < rates.length && (
               <div className="funnel-rate" aria-label={`${stages[index].label}到${stages[index + 1].label}转化率`}>
                 <span>↓</span>
                 <strong>{formatFunnelRate(rates[index])}</strong>
-                <small>{currentLabel} · 对比 {formatFunnelRate(comparisonRates[index])}</small>
+                <small>{comparisonEnabled ? `${currentLabel} · ${comparisonLabel} ${formatFunnelRate(comparisonRates[index])}` : "阶段转化"}</small>
               </div>
             )}
           </div>
@@ -355,7 +389,7 @@ function FunnelCard({
   );
 }
 
-function ConversionFunnels({ current, comparison, latest }: { current: DashboardRow; comparison: DashboardRow; latest: string }) {
+function ConversionFunnels({ current, comparison, latest }: { current: DashboardRow; comparison?: DashboardRow; latest: string }) {
   const toNumber = (value: unknown) => value === null || value === undefined || value === "" ? null : Number(value);
   const retentionStages = (row: DashboardRow) => [
     { key: "retention-dau", label: "DAU", value: toNumber(row.DAU) },
@@ -372,16 +406,16 @@ function ConversionFunnels({ current, comparison, latest }: { current: Dashboard
       <FunnelCard
         title="活跃留存转化漏斗"
         stages={retentionStages(current)}
-        comparisonStages={retentionStages(comparison)}
+        comparisonStages={comparison ? retentionStages(comparison) : undefined}
         currentLabel={current.period}
-        comparisonLabel={comparison.period}
+        comparisonLabel={comparison?.period}
       />
       <FunnelCard
         title="活跃付费转化漏斗"
         stages={paymentStages(current)}
-        comparisonStages={paymentStages(comparison)}
+        comparisonStages={comparison ? paymentStages(comparison) : undefined}
         currentLabel={current.period}
-        comparisonLabel={comparison.period}
+        comparisonLabel={comparison?.period}
       />
     </div>
   );
@@ -427,13 +461,14 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
   const defaultComparisonDate = sourceRows[Math.max(0, initialSelectedIndex - 1)]?.period ?? firstPeriod;
   const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
   const [comparisonDate, setComparisonDate] = useState(parseQueryDate(params.get("compare"), defaultComparisonDate));
+  const [comparisonEnabled, setComparisonEnabled] = useState(params.has("compare"));
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const definitions = useMemo(() => metricMap(catalog), [catalog]);
 
-  const updateUrl = useCallback((updates: Record<string, string>) => {
+  const updateUrl = useCallback((updates: Record<string, string | null>) => {
     const next = new URLSearchParams(params.toString());
-    Object.entries(updates).forEach(([key, value]) => next.set(key, value));
+    Object.entries(updates).forEach(([key, value]) => value === null ? next.delete(key) : next.set(key, value));
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   }, [params, pathname, router]);
 
@@ -460,17 +495,23 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
 
   const switchView = (next: View) => {
     setView(next);
-    updateUrl({ view: next, from: selectedDate, to: selectedDate, compare: comparisonDate });
+    updateUrl({ view: next, from: selectedDate, to: selectedDate, compare: comparisonEnabled ? comparisonDate : null });
   };
 
   const selectDate = (date: string) => {
     setSelectedDate(date);
-    updateUrl({ view, from: date, to: date, compare: comparisonDate });
+    updateUrl({ view, from: date, to: date, compare: comparisonEnabled ? comparisonDate : null });
   };
 
   const selectComparisonDate = (date: string) => {
     setComparisonDate(date);
     updateUrl({ view, from: selectedDate, to: selectedDate, compare: date });
+  };
+
+  const toggleComparison = () => {
+    const next = !comparisonEnabled;
+    setComparisonEnabled(next);
+    updateUrl({ view, from: selectedDate, to: selectedDate, compare: next ? comparisonDate : null });
   };
 
   return (
@@ -499,12 +540,17 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
               <span>查看日期</span>
               <input aria-label="日报日期" type="date" min={firstPeriod} max={lastPeriod} value={selectedDate} onChange={(event) => selectDate(event.target.value)} />
             </label>
-            {view === "overview" && (
+            {view === "overview" && comparisonEnabled && (
               <label className="date-control comparison-date">
                 <CalendarDays size={16} />
                 <span>对比日期</span>
                 <input aria-label="对比日期" type="date" min={firstPeriod} max={lastPeriod} value={comparisonDate} onChange={(event) => selectComparisonDate(event.target.value)} />
               </label>
+            )}
+            {view === "overview" && (
+              <button className={`comparison-toggle${comparisonEnabled ? " active" : ""}`} aria-pressed={comparisonEnabled} onClick={toggleComparison}>
+                {comparisonEnabled ? "关闭数据对比" : "开启数据对比"}
+              </button>
             )}
           </div>
         </header>
@@ -526,10 +572,19 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                   <div className="kpi-grid">
                     {KPI_KEYS.map((key) => {
                       const metric = definitions.get(key)!;
-                      return <KpiCard key={key} metric={metric} current={current[key]} previous={comparison[key]} comparisonLabel={comparison.period} mature={isMature(current, latest, metric.maturityDays)} />;
+                      return <KpiCard
+                        key={key}
+                        metric={metric}
+                        current={current[key]}
+                        previous={comparisonEnabled ? comparison[key] : undefined}
+                        currentLabel={comparisonEnabled ? current.period : undefined}
+                        comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                        mature={isMature(current, latest, metric.maturityDays)}
+                        comparisonMature={isMature(comparison, latest, metric.maturityDays)}
+                      />;
                     })}
                   </div>
-                  <ConversionFunnels current={current} comparison={comparison} latest={latest} />
+                  <ConversionFunnels current={current} comparison={comparisonEnabled ? comparison : undefined} latest={latest} />
                   <DailyDualAxisTrendChart
                     title="新用户留存趋势图"
                     rows={dailyTrendRows}

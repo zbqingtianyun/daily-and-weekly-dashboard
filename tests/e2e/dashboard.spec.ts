@@ -46,15 +46,34 @@ test("经营总览支持选择两个日期对比指标卡和漏斗", async ({ pa
 
   const dauCard = page.getByRole("article").filter({ hasText: "DAU" });
   await expect(dauCard.getByText("1860", { exact: true })).toBeVisible();
+  await expect(dauCard.getByText("1392", { exact: true })).toBeVisible();
   await expect(dauCard.getByText("33.6%")).toBeVisible();
-  await expect(dauCard.getByText("较 2020-09-21")).toBeVisible();
+  await expect(dauCard.getByText("2020-09-28", { exact: true })).toBeVisible();
+  await expect(dauCard.getByText("2020-09-21", { exact: true })).toBeVisible();
 
   const paymentFunnel = page.getByRole("region", { name: "活跃付费转化漏斗" });
-  await expect(paymentFunnel.getByText("2020-09-21：1,392")).toBeVisible();
+  await expect(paymentFunnel.getByText("2020-09-21", { exact: true }).first()).toBeVisible();
+  await expect(paymentFunnel.getByText("1,392", { exact: true })).toBeVisible();
 
   await page.getByLabel("对比日期").fill("2020-09-20");
   await expect(page).toHaveURL(/compare=2020-09-20/);
   await expect(page.getByRole("region", { name: "新用户留存趋势图" }).getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();
+});
+
+test("经营总览可以关闭数据对比并仅展示原日期数据", async ({ page }) => {
+  await page.goto("/?from=2020-09-28&to=2020-09-28&compare=2020-09-21");
+
+  await page.getByRole("button", { name: "关闭数据对比" }).click();
+  await expect(page.getByLabel("对比日期")).toHaveCount(0);
+  await expect(page).not.toHaveURL(/compare=/);
+
+  const dauCard = page.getByRole("article").filter({ hasText: "DAU" });
+  await expect(dauCard.getByText("1860", { exact: true })).toBeVisible();
+  await expect(dauCard.getByText("1392", { exact: true })).toHaveCount(0);
+
+  const paymentFunnel = page.getByRole("region", { name: "活跃付费转化漏斗" });
+  await expect(paymentFunnel.getByText("2020-09-21")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "开启数据对比" })).toBeVisible();
 });
 
 test("经营总览展示活跃留存与活跃付费转化漏斗", async ({ page }) => {
