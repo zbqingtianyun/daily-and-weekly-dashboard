@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+query-output/
+node_modules/
+.next/
+playwright-report/
+test-results/
+.vercel/
+*.tsbuildinfo
+
