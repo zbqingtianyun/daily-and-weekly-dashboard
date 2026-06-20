@@ -135,7 +135,14 @@ function DailyDualAxisTrendChart({
   rateKey,
   rateNumeratorKey,
   rateDenominatorKey,
-  maturityDays = 0
+  maturityDays = 0,
+  primaryAxisName = "人数",
+  secondaryAxisName = rateLabel,
+  volumeAxisIndex = 0,
+  comparisonAxisIndex = 0,
+  rateAxisIndex = 1,
+  rateMultiplier = 100,
+  rateAxisSuffix = "%"
 }: {
   title: string;
   rows: DashboardRow[];
@@ -149,6 +156,13 @@ function DailyDualAxisTrendChart({
   rateNumeratorKey?: string;
   rateDenominatorKey?: string;
   maturityDays?: number;
+  primaryAxisName?: string;
+  secondaryAxisName?: string;
+  volumeAxisIndex?: number;
+  comparisonAxisIndex?: number;
+  rateAxisIndex?: number;
+  rateMultiplier?: number;
+  rateAxisSuffix?: string;
 }) {
   const option = useMemo<EChartsOption>(() => {
     const base = baseChart();
@@ -186,7 +200,7 @@ function DailyDualAxisTrendChart({
       yAxis: [
         {
           type: "value",
-          name: "人数",
+          name: primaryAxisName,
           position: "left",
           min: 0,
           axisLine: { show: false },
@@ -197,12 +211,12 @@ function DailyDualAxisTrendChart({
         },
         {
           type: "value",
-          name: rateLabel,
+          name: secondaryAxisName,
           position: "right",
           min: 0,
           axisLine: { show: false },
           axisTick: { show: false },
-          axisLabel: { color: "#8d929b", fontSize: 10, formatter: "{value}%" },
+          axisLabel: { color: "#8d929b", fontSize: 10, formatter: `{value}${rateAxisSuffix}` },
           nameTextStyle: { color: "#8d929b", fontSize: 10 },
           splitLine: { show: false }
         }
@@ -215,7 +229,7 @@ function DailyDualAxisTrendChart({
         {
           name: volumeLabel,
           type: "bar",
-          yAxisIndex: 0,
+          yAxisIndex: volumeAxisIndex,
           barMaxWidth: 18,
           itemStyle: { color: "rgba(47,107,255,.72)", borderRadius: [4, 4, 0, 0] },
           data: rows.map((row) => row[volumeKey] === null ? null : Number(row[volumeKey]))
@@ -223,7 +237,7 @@ function DailyDualAxisTrendChart({
         {
           name: comparisonLabel,
           type: "line",
-          yAxisIndex: 0,
+          yAxisIndex: comparisonAxisIndex,
           smooth: 0.25,
           showSymbol: false,
           connectNulls: false,
@@ -234,7 +248,7 @@ function DailyDualAxisTrendChart({
         {
           name: rateLabel,
           type: "line",
-          yAxisIndex: 1,
+          yAxisIndex: rateAxisIndex,
           smooth: 0.25,
           showSymbol: false,
           connectNulls: false,
@@ -243,12 +257,12 @@ function DailyDualAxisTrendChart({
           data: rows.map((row) => {
             if (!isMature(row, latest, maturityDays)) return null;
             const value = rateValue(row);
-            return value === null ? null : value * 100;
+            return value === null ? null : value * rateMultiplier;
           })
         }
       ]
     };
-  }, [comparisonKey, comparisonLabel, latest, maturityDays, rateDenominatorKey, rateKey, rateLabel, rateNumeratorKey, rows, volumeKey, volumeLabel]);
+  }, [comparisonAxisIndex, comparisonKey, comparisonLabel, latest, maturityDays, primaryAxisName, rateAxisIndex, rateAxisSuffix, rateDenominatorKey, rateKey, rateLabel, rateMultiplier, rateNumeratorKey, rows, secondaryAxisName, volumeAxisIndex, volumeKey, volumeLabel]);
 
   return (
     <section className="panel new-user-trend" aria-label={title}>
@@ -263,7 +277,7 @@ function DailyDualAxisTrendChart({
   );
 }
 
-function KpiCard({ metric, current, previous, mature = true }: { metric: MetricDefinition; current: unknown; previous: unknown; mature?: boolean }) {
+function KpiCard({ metric, current, previous, mature = true, comparisonLabel = "上一周期" }: { metric: MetricDefinition; current: unknown; previous: unknown; mature?: boolean; comparisonLabel?: string }) {
   const change = mature ? delta(current, previous) : null;
   return (
     <motion.article className="kpi-card" whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
@@ -279,15 +293,31 @@ function KpiCard({ metric, current, previous, mature = true }: { metric: MetricD
             {Math.abs(change * 100).toFixed(1)}%
           </span>
         )}
-        <span>较上一周期</span>
+        <span>较 {comparisonLabel}</span>
       </div>
     </motion.article>
   );
 }
 
-function FunnelCard({ title, stages }: { title: string; stages: { key: string; label: string; value: number | null }[] }) {
+function FunnelCard({
+  title,
+  stages,
+  comparisonStages,
+  currentLabel,
+  comparisonLabel
+}: {
+  title: string;
+  stages: { key: string; label: string; value: number | null }[];
+  comparisonStages: { key: string; label: string; value: number | null }[];
+  currentLabel: string;
+  comparisonLabel: string;
+}) {
   const rates = stages.slice(1).map((stage, index) => conversionRate(stage.value, stages[index].value));
+  const comparisonRates = comparisonStages.slice(1).map((stage, index) => conversionRate(stage.value, comparisonStages[index].value));
   const overallRate = conversionRate(stages.at(-1)?.value, stages[0].value);
+  const comparisonOverallRate = conversionRate(comparisonStages.at(-1)?.value, comparisonStages[0].value);
+  const formatFunnelValue = (value: number | null) => value === null || !Number.isFinite(value) ? "待成熟" : formatMetric(value, "integer");
+  const formatFunnelRate = (value: number | null) => value === null ? "待成熟" : `${(value * 100).toFixed(1)}%`;
   return (
     <section className="panel conversion-funnel" aria-label={title}>
       <header className="panel-header">
@@ -297,7 +327,8 @@ function FunnelCard({ title, stages }: { title: string; stages: { key: string; l
         </div>
         <div className="funnel-overall">
           <span>整体转化率</span>
-          <strong>{overallRate === null ? "暂无数据" : `${(overallRate * 100).toFixed(1)}%`}</strong>
+          <strong>{formatFunnelRate(overallRate)}</strong>
+          <small>{comparisonLabel}：{formatFunnelRate(comparisonOverallRate)}</small>
         </div>
       </header>
       <div className="funnel-body">
@@ -305,13 +336,16 @@ function FunnelCard({ title, stages }: { title: string; stages: { key: string; l
           <div className="funnel-step" key={stage.key}>
             <div className={`funnel-stage funnel-stage-${index + 1}`} style={{ width: `${100 - index * (stages.length === 2 ? 32 : 22)}%` }}>
               <span>{stage.label}</span>
-              <strong>{stage.value === null || !Number.isFinite(stage.value) ? "待成熟" : formatMetric(stage.value, "integer")}</strong>
+              <div className="funnel-stage-values">
+                <strong>{formatFunnelValue(stage.value)}</strong>
+                <small>{comparisonLabel}：{formatFunnelValue(comparisonStages[index]?.value ?? null)}</small>
+              </div>
             </div>
             {index < rates.length && (
               <div className="funnel-rate" aria-label={`${stages[index].label}到${stages[index + 1].label}转化率`}>
                 <span>↓</span>
-                <strong>{rates[index] === null ? "待成熟" : `${(rates[index]! * 100).toFixed(1)}%`}</strong>
-                <small>阶段转化</small>
+                <strong>{formatFunnelRate(rates[index])}</strong>
+                <small>{currentLabel} · 对比 {formatFunnelRate(comparisonRates[index])}</small>
               </div>
             )}
           </div>
@@ -321,29 +355,33 @@ function FunnelCard({ title, stages }: { title: string; stages: { key: string; l
   );
 }
 
-function ConversionFunnels({ current, latest }: { current: DashboardRow; latest: string }) {
+function ConversionFunnels({ current, comparison, latest }: { current: DashboardRow; comparison: DashboardRow; latest: string }) {
   const toNumber = (value: unknown) => value === null || value === undefined || value === "" ? null : Number(value);
-  const dau = toNumber(current.DAU);
-  const retained7 = isMature(current, latest, 7) ? toNumber(current["活跃用户7日留存人数"]) : null;
-  const retained14 = isMature(current, latest, 14) ? toNumber(current["活跃用户14日留存人数"]) : null;
-  const paid = toNumber(current["总付费人数"]);
+  const retentionStages = (row: DashboardRow) => [
+    { key: "retention-dau", label: "DAU", value: toNumber(row.DAU) },
+    { key: "retention-7d", label: "活跃用户 7 日留存人数", value: isMature(row, latest, 7) ? toNumber(row["活跃用户7日留存人数"]) : null },
+    { key: "retention-14d", label: "活跃用户 14 日留存人数", value: isMature(row, latest, 14) ? toNumber(row["活跃用户14日留存人数"]) : null }
+  ];
+  const paymentStages = (row: DashboardRow) => [
+    { key: "payment-dau", label: "DAU", value: toNumber(row.DAU) },
+    { key: "payment-total", label: "总付费人数", value: toNumber(row["总付费人数"]) }
+  ];
 
   return (
     <div className="conversion-funnel-grid">
       <FunnelCard
         title="活跃留存转化漏斗"
-        stages={[
-          { key: "retention-dau", label: "DAU", value: dau },
-          { key: "retention-7d", label: "活跃用户 7 日留存人数", value: retained7 },
-          { key: "retention-14d", label: "活跃用户 14 日留存人数", value: retained14 }
-        ]}
+        stages={retentionStages(current)}
+        comparisonStages={retentionStages(comparison)}
+        currentLabel={current.period}
+        comparisonLabel={comparison.period}
       />
       <FunnelCard
         title="活跃付费转化漏斗"
-        stages={[
-          { key: "payment-dau", label: "DAU", value: dau },
-          { key: "payment-total", label: "总付费人数", value: paid }
-        ]}
+        stages={paymentStages(current)}
+        comparisonStages={paymentStages(comparison)}
+        currentLabel={current.period}
+        comparisonLabel={comparison.period}
       />
     </div>
   );
@@ -384,7 +422,11 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
   const sourceRows = daily.rows;
   const firstPeriod = sourceRows[0].period;
   const lastPeriod = sourceRows.at(-1)!.period;
-  const [selectedDate, setSelectedDate] = useState(parseQueryDate(params.get("to") ?? params.get("from"), lastPeriod));
+  const initialSelectedDate = parseQueryDate(params.get("to") ?? params.get("from"), lastPeriod);
+  const initialSelectedIndex = sourceRows.findIndex((row) => row.period === initialSelectedDate);
+  const defaultComparisonDate = sourceRows[Math.max(0, initialSelectedIndex - 1)]?.period ?? firstPeriod;
+  const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
+  const [comparisonDate, setComparisonDate] = useState(parseQueryDate(params.get("compare"), defaultComparisonDate));
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const definitions = useMemo(() => metricMap(catalog), [catalog]);
@@ -408,6 +450,7 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
   }, []);
 
   const current = sourceRows.find((row) => row.period === selectedDate) ?? sourceRows.at(-1)!;
+  const comparison = sourceRows.find((row) => row.period === comparisonDate) ?? sourceRows[0];
   const rows = [current];
   const dailyTrendRows = useMemo(() => daily.rows.filter((row) => row.period <= current.period), [current.period, daily.rows]);
   const currentIndex = sourceRows.findIndex((row) => row.period === current.period);
@@ -417,12 +460,17 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
 
   const switchView = (next: View) => {
     setView(next);
-    updateUrl({ view: next, from: selectedDate, to: selectedDate });
+    updateUrl({ view: next, from: selectedDate, to: selectedDate, compare: comparisonDate });
   };
 
   const selectDate = (date: string) => {
     setSelectedDate(date);
-    updateUrl({ view, from: date, to: date });
+    updateUrl({ view, from: date, to: date, compare: comparisonDate });
+  };
+
+  const selectComparisonDate = (date: string) => {
+    setComparisonDate(date);
+    updateUrl({ view, from: selectedDate, to: selectedDate, compare: date });
   };
 
   return (
@@ -451,6 +499,13 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
               <span>查看日期</span>
               <input aria-label="日报日期" type="date" min={firstPeriod} max={lastPeriod} value={selectedDate} onChange={(event) => selectDate(event.target.value)} />
             </label>
+            {view === "overview" && (
+              <label className="date-control comparison-date">
+                <CalendarDays size={16} />
+                <span>对比日期</span>
+                <input aria-label="对比日期" type="date" min={firstPeriod} max={lastPeriod} value={comparisonDate} onChange={(event) => selectComparisonDate(event.target.value)} />
+              </label>
+            )}
           </div>
         </header>
 
@@ -471,10 +526,10 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                   <div className="kpi-grid">
                     {KPI_KEYS.map((key) => {
                       const metric = definitions.get(key)!;
-                      return <KpiCard key={key} metric={metric} current={current[key]} previous={previous?.[key]} mature={isMature(current, latest, metric.maturityDays)} />;
+                      return <KpiCard key={key} metric={metric} current={current[key]} previous={comparison[key]} comparisonLabel={comparison.period} mature={isMature(current, latest, metric.maturityDays)} />;
                     })}
                   </div>
-                  <ConversionFunnels current={current} latest={latest} />
+                  <ConversionFunnels current={current} comparison={comparison} latest={latest} />
                   <DailyDualAxisTrendChart
                     title="新用户留存趋势图"
                     rows={dailyTrendRows}
@@ -510,6 +565,24 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                     rateNumeratorKey="总付费人数"
                     rateDenominatorKey="DAU"
                     rateLabel="活跃用户付费率"
+                  />
+                  <DailyDualAxisTrendChart
+                    title="客单价趋势图"
+                    rows={dailyTrendRows}
+                    latest={daily.rows.at(-1)!.period}
+                    volumeKey="总付费人数"
+                    volumeLabel="总付费人数"
+                    comparisonKey="总付费金额"
+                    comparisonLabel="总付费金额"
+                    rateKey="客单价"
+                    rateLabel="客单价"
+                    primaryAxisName="金额（元）"
+                    secondaryAxisName="人数"
+                    volumeAxisIndex={1}
+                    comparisonAxisIndex={0}
+                    rateAxisIndex={0}
+                    rateMultiplier={1}
+                    rateAxisSuffix=""
                   />
                 </>
               )}

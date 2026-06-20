@@ -47,6 +47,8 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
 .top-controls { gap: 10px; }
 .date-control { gap: 8px; border: 1px solid var(--line); background: rgba(255,255,253,.78); padding: 8px 11px; border-radius: 11px; color: #858992; }
 .date-control input { border: 0; background: transparent; color: #555962; font-size: 11px; width: 105px; outline: 0; }
+.comparison-date { border-color: rgba(47,107,255,.24); background: rgba(237,243,255,.72); }
+.comparison-date svg { color: var(--blue); }
 .content { padding: 42px 36px 64px; max-width: 1680px; margin: auto; }
 .page-heading { display: flex; justify-content: space-between; gap: 30px; align-items: flex-end; margin-bottom: 28px; }
 .eyebrow { color: var(--blue) !important; font-size: 10px !important; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; margin: 0 0 9px !important; }
@@ -74,6 +76,7 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
 .funnel-overall { display: flex; flex-direction: column; align-items: flex-end; padding: 9px 13px; border-radius: 13px; background: var(--blue-open); color: var(--blue); }
 .funnel-overall span { font-size: 9px; letter-spacing: .08em; }
 .funnel-overall strong { margin-top: 2px; font-size: 19px; font-variant-numeric: tabular-nums; }
+.funnel-overall small { margin-top: 3px; font-size: 8px; color: #6f88c5; font-variant-numeric: tabular-nums; }
 .funnel-body { display: flex; flex-direction: column; align-items: center; padding: 7px 2% 0; }
 .funnel-step { width: 100%; display: flex; flex-direction: column; align-items: center; }
 .funnel-stage { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px clamp(22px, 5vw, 64px); color: #fff; clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); transition: width .35s ease, transform .2s ease; }
@@ -83,6 +86,8 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
 .funnel-stage-3 { background: #8ba8ee; color: #142958; }
 .funnel-stage span { font-size: 12px; font-weight: 650; letter-spacing: .01em; }
 .funnel-stage strong { font-size: clamp(21px, 2.2vw, 30px); font-variant-numeric: tabular-nums; }
+.funnel-stage-values { display: flex; flex-direction: column; align-items: flex-end; }
+.funnel-stage-values small { margin-top: 2px; font-size: 8px; opacity: .78; font-variant-numeric: tabular-nums; }
 .funnel-rate { height: 50px; display: grid; grid-template-columns: 16px auto auto; align-items: center; gap: 7px; color: #7f8590; }
 .funnel-rate > span { color: var(--blue); font-size: 16px; }
 .funnel-rate strong { color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -181,8 +186,9 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
   .search-trigger span,.search-trigger kbd { display: none; }
   .top-controls { gap: 6px; }
   .single-date { padding: 8px; gap: 4px; }
-  .single-date > svg,.single-date > span { display: none; }
-  .single-date input { width: 104px; }
+  .single-date > svg,.single-date > span,.comparison-date > svg,.comparison-date > span { display: none; }
+  .single-date input,.comparison-date input { width: 94px; }
+  .comparison-date { padding: 8px; }
   .content { padding: 28px 14px 100px; }
   .page-heading { display: block; }
   .freshness { align-items: flex-start; text-align: left; margin-top: 20px; }
@@ -198,6 +204,7 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
   .funnel-stage-2 { width: 88% !important; }
   .funnel-stage-3 { width: 72% !important; }
   .funnel-stage span { max-width: 60%; font-size: 10px; }
+  .funnel-stage-values small { font-size: 7px; }
   .dashboard-grid { display: block; }
   .panel { margin-bottom: 14px; padding: 18px 14px 12px; }
   .retention-groups { grid-template-columns: 1fr; }

@@ -41,6 +41,22 @@ test("日报可选择指定日期并展示该日数据", async ({ page }) => {
   await expect(page).toHaveURL(/to=2020-10-05/);
 });
 
+test("经营总览支持选择两个日期对比指标卡和漏斗", async ({ page }) => {
+  await page.goto("/?from=2020-09-28&to=2020-09-28&compare=2020-09-21");
+
+  const dauCard = page.getByRole("article").filter({ hasText: "DAU" });
+  await expect(dauCard.getByText("1860", { exact: true })).toBeVisible();
+  await expect(dauCard.getByText("33.6%")).toBeVisible();
+  await expect(dauCard.getByText("较 2020-09-21")).toBeVisible();
+
+  const paymentFunnel = page.getByRole("region", { name: "活跃付费转化漏斗" });
+  await expect(paymentFunnel.getByText("2020-09-21：1,392")).toBeVisible();
+
+  await page.getByLabel("对比日期").fill("2020-09-20");
+  await expect(page).toHaveURL(/compare=2020-09-20/);
+  await expect(page.getByRole("region", { name: "新用户留存趋势图" }).getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();
+});
+
 test("经营总览展示活跃留存与活跃付费转化漏斗", async ({ page }) => {
   await page.goto("/?from=2020-09-28&to=2020-09-28");
 
@@ -88,5 +104,15 @@ test("日报经营总览展示活跃用户付费趋势图", async ({ page }) => 
   await expect(paymentTrend.getByRole("heading", { name: "活跃用户付费趋势图" })).toBeVisible();
   await expect(paymentTrend.getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();
   await expect(paymentTrend.getByText(/DAU \/ 总付费人数 \/ 活跃用户付费率/)).toBeVisible();
+});
+
+test("日报经营总览展示客单价趋势图", async ({ page }) => {
+  await page.goto("/?from=2020-09-28&to=2020-09-28");
+
+  const unitPriceTrend = page.getByRole("region", { name: "客单价趋势图" });
+  await expect(unitPriceTrend).toBeVisible();
+  await expect(unitPriceTrend.getByRole("heading", { name: "客单价趋势图" })).toBeVisible();
+  await expect(unitPriceTrend.getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();
+  await expect(unitPriceTrend.getByText(/总付费人数 \/ 总付费金额 \/ 客单价/)).toBeVisible();
 });
 
