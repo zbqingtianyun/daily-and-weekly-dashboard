@@ -22,9 +22,20 @@ test("日报可选择指定日期并展示该日数据", async ({ page }) => {
   await page.getByLabel("日报日期").fill("2020-10-05");
 
   await expect(page.getByText("2020年10月5日")).toBeVisible();
-  await expect(page.getByText("564", { exact: true })).toBeVisible();
+  await expect(page.getByRole("article").filter({ hasText: "DAU" }).getByText("564", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/grain=day/);
   await expect(page).toHaveURL(/from=2020-10-05/);
   await expect(page).toHaveURL(/to=2020-10-05/);
+});
+
+test("经营总览展示核心经营转化漏斗", async ({ page }) => {
+  await page.goto("/?grain=day&from=2020-09-28&to=2020-09-28");
+
+  const funnel = page.getByRole("region", { name: "核心经营转化漏斗" });
+  await expect(funnel).toBeVisible();
+  await expect(funnel.getByText("DAU", { exact: true })).toBeVisible();
+  await expect(funnel.getByText("活跃用户 14 日留存人数", { exact: true })).toBeVisible();
+  await expect(funnel.getByText("总付费人数", { exact: true })).toBeVisible();
+  await expect(funnel.getByText("整体转化率")).toBeVisible();
 });
 

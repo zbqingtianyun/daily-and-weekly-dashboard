@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { delta, formatMetric, isMature, KPI_KEYS } from "@/lib/metrics";
+import { conversionRate, delta, formatMetric, isMature, KPI_KEYS } from "@/lib/metrics";
 
 describe("指标工具", () => {
   it("正确格式化百分比与货币", () => {
@@ -10,6 +10,13 @@ describe("指标工具", () => {
   it("计算周期变化", () => {
     expect(delta(120, 100)).toBeCloseTo(0.2);
     expect(delta(100, 0)).toBeNull();
+  });
+
+  it("计算漏斗转化率并处理无效分母", () => {
+    expect(conversionRate(25, 100)).toBeCloseTo(0.25);
+    expect(conversionRate(120, 100)).toBeCloseTo(1.2);
+    expect(conversionRate(10, 0)).toBeNull();
+    expect(conversionRate(null, 100)).toBeNull();
   });
 
   it("留存成熟窗口不会把尾部补零当成真实值", () => {

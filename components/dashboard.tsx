@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { EChartsOption, SeriesOption } from "echarts";
 import Chart from "./chart";
 import type { DashboardDataset, DashboardRow, MetricDefinition, SnapshotMetadata } from "@/lib/types";
-import { delta, formatMetric, isMature, KPI_KEYS, metricMap, parseQueryDate } from "@/lib/metrics";
+import { conversionRate, delta, formatMetric, isMature, KPI_KEYS, metricMap, parseQueryDate } from "@/lib/metrics";
 
 type View = "overview" | "growth" | "revenue" | "conversion";
 type Grain = "day" | "week";
@@ -173,6 +173,55 @@ function KpiCard({ metric, current, previous, weekly, mature = true }: { metric:
         <span>{weekly && metric.aggregation === "weekly_daily_average" ? "周内日均" : "较上一周期"}</span>
       </div>
     </motion.article>
+  );
+}
+
+function ConversionFunnel({ current, latest, grain }: { current: DashboardRow; latest: string; grain: Grain }) {
+  const retentionMature = isMature(current, latest, 14, grain);
+  const toNumber = (value: unknown) => value === null || value === undefined || value === "" ? null : Number(value);
+  const dau = toNumber(current.DAU);
+  const retained = retentionMature ? toNumber(current["活跃用户14日留存人数"]) : null;
+  const paid = toNumber(current["总付费人数"]);
+  const retentionRate = conversionRate(retained, dau);
+  const paymentRate = conversionRate(paid, retained);
+  const overallRate = conversionRate(paid, dau);
+  const stages = [
+    { key: "dau", label: "DAU", value: dau, width: 100 },
+    { key: "retained", label: "活跃用户 14 日留存人数", value: retained, width: 78 },
+    { key: "paid", label: "总付费人数", value: paid, width: 56 }
+  ];
+  const rates = [retentionRate, paymentRate];
+
+  return (
+    <section className="panel conversion-funnel" aria-labelledby="conversion-funnel-title">
+      <header className="panel-header">
+        <div>
+          <h2 id="conversion-funnel-title">核心经营转化漏斗</h2>
+          <p>按所选周期观察活跃、14 日留存与付费规模；阶段统计口径可能不严格包含</p>
+        </div>
+        <div className="funnel-overall">
+          <span>整体转化率</span>
+          <strong>{overallRate === null ? "暂无数据" : `${(overallRate * 100).toFixed(1)}%`}</strong>
+        </div>
+      </header>
+      <div className="funnel-body">
+        {stages.map((stage, index) => (
+          <div className="funnel-step" key={stage.key}>
+            <div className={`funnel-stage funnel-stage-${index + 1}`} style={{ width: `${stage.width}%` }}>
+              <span>{stage.label}</span>
+              <strong>{stage.value === null || !Number.isFinite(stage.value) ? "待成熟" : formatMetric(stage.value, "integer")}</strong>
+            </div>
+            {index < rates.length && (
+              <div className="funnel-rate" aria-label={`${stages[index].label}到${stages[index + 1].label}转化率`}>
+                <span>↓</span>
+                <strong>{rates[index] === null ? "待成熟" : `${(rates[index]! * 100).toFixed(1)}%`}</strong>
+                <small>阶段转化</small>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -377,6 +426,7 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
                       return <KpiCard key={key} metric={metric} current={current[key]} previous={previous?.[key]} weekly={weeklyMode} mature={isMature(current, latest, metric.maturityDays, grain)} />;
                     })}
                   </div>
+                  <ConversionFunnel current={current} latest={latest} grain={grain} />
                   <div className="dashboard-grid">
                     <SectionCard className="span-8" title="活跃与新增趋势" subtitle={`${rows.length} 个${weeklyMode ? "周" : "自然日"} · 鼠标滚轮配合 Shift 可缩放`}>
                       <LineChart rows={rows} keys={["DAU", "激活人数", "首次活跃人数"]} secondaryKey="DAU" />

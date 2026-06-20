@@ -29,6 +29,14 @@ export function delta(current: unknown, previous: unknown) {
   return (now - before) / Math.abs(before);
 }
 
+export function conversionRate(current: unknown, previous: unknown) {
+  if (current === null || current === undefined || current === "" || previous === null || previous === undefined || previous === "") return null;
+  const numerator = Number(current);
+  const denominator = Number(previous);
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return null;
+  return numerator / denominator;
+}
+
 export function isMature(row: DashboardRow, latestPeriod: string, maturityDays: number, grain: "day" | "week") {
   if (!maturityDays) return true;
   const rowDate = new Date(`${row.period}T00:00:00`);

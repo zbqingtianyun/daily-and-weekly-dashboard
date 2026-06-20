@@ -70,6 +70,24 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
 .delta { display: flex; align-items: center; font-weight: 700; color: #6d7180; }
 .delta.up { color: var(--blue); }
 .delta.down { color: #7d657a; }
+.conversion-funnel { min-height: 0; margin-bottom: 16px; padding-bottom: 24px; overflow: hidden; }
+.conversion-funnel .panel-header { align-items: center; }
+.funnel-overall { display: flex; flex-direction: column; align-items: flex-end; padding: 9px 13px; border-radius: 13px; background: var(--blue-open); color: var(--blue); }
+.funnel-overall span { font-size: 9px; letter-spacing: .08em; }
+.funnel-overall strong { margin-top: 2px; font-size: 19px; font-variant-numeric: tabular-nums; }
+.funnel-body { display: flex; flex-direction: column; align-items: center; padding: 7px 8% 0; }
+.funnel-step { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.funnel-stage { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px clamp(22px, 5vw, 64px); color: #fff; clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); transition: width .35s ease, transform .2s ease; }
+.funnel-stage:hover { transform: scale(1.012); }
+.funnel-stage-1 { background: #255de0; }
+.funnel-stage-2 { background: #527eea; }
+.funnel-stage-3 { background: #8ba8ee; color: #142958; }
+.funnel-stage span { font-size: 12px; font-weight: 650; letter-spacing: .01em; }
+.funnel-stage strong { font-size: clamp(21px, 2.2vw, 30px); font-variant-numeric: tabular-nums; }
+.funnel-rate { height: 50px; display: grid; grid-template-columns: 16px auto auto; align-items: center; gap: 7px; color: #7f8590; }
+.funnel-rate > span { color: var(--blue); font-size: 16px; }
+.funnel-rate strong { color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+.funnel-rate small { font-size: 9px; }
 .dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
 .span-4 { grid-column: span 4; }.span-5 { grid-column: span 5; }.span-6 { grid-column: span 6; }.span-7 { grid-column: span 7; }.span-8 { grid-column: span 8; }
 .panel { border-radius: var(--radius); padding: 22px 22px 16px; min-width: 0; min-height: 392px; }
@@ -171,6 +189,15 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
   .freshness { align-items: flex-start; text-align: left; margin-top: 20px; }
   .kpi-grid,.revenue-kpis { grid-template-columns: repeat(2, 1fr); }
   .kpi-card { min-height: 124px; padding: 14px; }
+  .conversion-funnel { padding-inline: 14px; }
+  .conversion-funnel .panel-header { align-items: flex-start; }
+  .funnel-overall { flex: 0 0 auto; padding: 8px 10px; }
+  .funnel-body { padding-inline: 0; }
+  .funnel-stage { min-height: 62px; padding-inline: 18px; }
+  .funnel-stage-1 { width: 100% !important; }
+  .funnel-stage-2 { width: 88% !important; }
+  .funnel-stage-3 { width: 72% !important; }
+  .funnel-stage span { max-width: 60%; font-size: 10px; }
   .dashboard-grid { display: block; }
   .panel { margin-bottom: 14px; padding: 18px 14px 12px; }
   .retention-groups { grid-template-columns: 1fr; }
