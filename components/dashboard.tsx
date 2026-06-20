@@ -14,7 +14,6 @@ import type { DashboardDataset, DashboardRow, MetricDefinition, SnapshotMetadata
 import { conversionRate, delta, formatMetric, isMature, KPI_KEYS, metricMap, parseQueryDate } from "@/lib/metrics";
 
 type View = "overview" | "growth" | "revenue" | "conversion";
-type Grain = "day" | "week";
 
 const COLORS = {
   blue: "#2f6bff",
@@ -124,9 +123,42 @@ function LineChart({ rows, keys, labels, percentKeys = [], secondaryKey }: { row
   return <Chart option={option} />;
 }
 
-function NewUserTrendChart({ rows, latest }: { rows: DashboardRow[]; latest: string }) {
+function DailyDualAxisTrendChart({
+  title,
+  rows,
+  latest,
+  volumeKey,
+  volumeLabel,
+  comparisonKey,
+  comparisonLabel,
+  rateLabel,
+  rateKey,
+  rateNumeratorKey,
+  rateDenominatorKey,
+  maturityDays = 0
+}: {
+  title: string;
+  rows: DashboardRow[];
+  latest: string;
+  volumeKey: string;
+  volumeLabel: string;
+  comparisonKey: string;
+  comparisonLabel: string;
+  rateLabel: string;
+  rateKey?: string;
+  rateNumeratorKey?: string;
+  rateDenominatorKey?: string;
+  maturityDays?: number;
+}) {
   const option = useMemo<EChartsOption>(() => {
     const base = baseChart();
+    const rateValue = (row: DashboardRow) => {
+      if (rateNumeratorKey && rateDenominatorKey) {
+        return conversionRate(row[rateNumeratorKey], row[rateDenominatorKey]);
+      }
+      if (!rateKey || row[rateKey] === null) return null;
+      return Number(row[rateKey]);
+    };
     return {
       ...base,
       grid: { left: 20, right: 24, top: 48, bottom: 54, containLabel: true },
@@ -165,7 +197,7 @@ function NewUserTrendChart({ rows, latest }: { rows: DashboardRow[]; latest: str
         },
         {
           type: "value",
-          name: "留存率",
+          name: rateLabel,
           position: "right",
           min: 0,
           axisLine: { show: false },
@@ -181,15 +213,15 @@ function NewUserTrendChart({ rows, latest }: { rows: DashboardRow[]; latest: str
       ],
       series: [
         {
-          name: "激活人数",
+          name: volumeLabel,
           type: "bar",
           yAxisIndex: 0,
           barMaxWidth: 18,
           itemStyle: { color: "rgba(47,107,255,.72)", borderRadius: [4, 4, 0, 0] },
-          data: rows.map((row) => row["激活人数"] === null ? null : Number(row["激活人数"]))
+          data: rows.map((row) => row[volumeKey] === null ? null : Number(row[volumeKey]))
         },
         {
-          name: "新用户 14 日留存人数",
+          name: comparisonLabel,
           type: "line",
           yAxisIndex: 0,
           smooth: 0.25,
@@ -197,10 +229,10 @@ function NewUserTrendChart({ rows, latest }: { rows: DashboardRow[]; latest: str
           connectNulls: false,
           lineStyle: { width: 2.5, color: COLORS.violet },
           itemStyle: { color: COLORS.violet },
-          data: rows.map((row) => isMature(row, latest, 14, "day") && row["新用户14日留存人数"] !== null ? Number(row["新用户14日留存人数"]) : null)
+          data: rows.map((row) => isMature(row, latest, maturityDays) && row[comparisonKey] !== null ? Number(row[comparisonKey]) : null)
         },
         {
-          name: "新用户 14 日留存率",
+          name: rateLabel,
           type: "line",
           yAxisIndex: 1,
           smooth: 0.25,
@@ -208,18 +240,22 @@ function NewUserTrendChart({ rows, latest }: { rows: DashboardRow[]; latest: str
           connectNulls: false,
           lineStyle: { width: 2, type: "dashed", color: COLORS.gold },
           itemStyle: { color: COLORS.gold },
-          data: rows.map((row) => isMature(row, latest, 14, "day") && row["新用户14日留存率"] !== null ? Number(row["新用户14日留存率"]) * 100 : null)
+          data: rows.map((row) => {
+            if (!isMature(row, latest, maturityDays)) return null;
+            const value = rateValue(row);
+            return value === null ? null : value * 100;
+          })
         }
       ]
     };
-  }, [latest, rows]);
+  }, [comparisonKey, comparisonLabel, latest, maturityDays, rateDenominatorKey, rateKey, rateLabel, rateNumeratorKey, rows, volumeKey, volumeLabel]);
 
   return (
-    <section className="panel new-user-trend" aria-label="新用户变化趋势图">
+    <section className="panel new-user-trend" aria-label={title}>
       <header className="panel-header">
         <div>
-          <h2>新用户变化趋势图</h2>
-          <p>{rows[0]?.period} 至 {rows.at(-1)?.period} · 激活人数 / 新用户 14 日留存人数 / 新用户 14 日留存率</p>
+          <h2>{title}</h2>
+          <p>{rows[0]?.period} 至 {rows.at(-1)?.period} · {volumeLabel} / {comparisonLabel} / {rateLabel}</p>
         </div>
       </header>
       <Chart option={option} height={380} />
@@ -227,7 +263,7 @@ function NewUserTrendChart({ rows, latest }: { rows: DashboardRow[]; latest: str
   );
 }
 
-function KpiCard({ metric, current, previous, weekly, mature = true }: { metric: MetricDefinition; current: unknown; previous: unknown; weekly: boolean; mature?: boolean }) {
+function KpiCard({ metric, current, previous, mature = true }: { metric: MetricDefinition; current: unknown; previous: unknown; mature?: boolean }) {
   const change = mature ? delta(current, previous) : null;
   return (
     <motion.article className="kpi-card" whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
@@ -243,7 +279,7 @@ function KpiCard({ metric, current, previous, weekly, mature = true }: { metric:
             {Math.abs(change * 100).toFixed(1)}%
           </span>
         )}
-        <span>{weekly && metric.aggregation === "weekly_daily_average" ? "周内日均" : "较上一周期"}</span>
+        <span>较上一周期</span>
       </div>
     </motion.article>
   );
@@ -285,11 +321,11 @@ function FunnelCard({ title, stages }: { title: string; stages: { key: string; l
   );
 }
 
-function ConversionFunnels({ current, latest, grain }: { current: DashboardRow; latest: string; grain: Grain }) {
+function ConversionFunnels({ current, latest }: { current: DashboardRow; latest: string }) {
   const toNumber = (value: unknown) => value === null || value === undefined || value === "" ? null : Number(value);
   const dau = toNumber(current.DAU);
-  const retained7 = isMature(current, latest, 7, grain) ? toNumber(current["活跃用户7日留存人数"]) : null;
-  const retained14 = isMature(current, latest, 14, grain) ? toNumber(current["活跃用户14日留存人数"]) : null;
+  const retained7 = isMature(current, latest, 7) ? toNumber(current["活跃用户7日留存人数"]) : null;
+  const retained14 = isMature(current, latest, 14) ? toNumber(current["活跃用户14日留存人数"]) : null;
   const paid = toNumber(current["总付费人数"]);
 
   return (
@@ -339,21 +375,16 @@ function StageCard({ title, icon, rows, stages, rates }: { title: string; icon: 
   );
 }
 
-export default function Dashboard({ daily, weekly, catalog, metadata }: { daily: DashboardDataset; weekly: DashboardDataset; catalog: MetricDefinition[]; metadata: SnapshotMetadata }) {
+export default function Dashboard({ daily, catalog, metadata }: { daily: DashboardDataset; catalog: MetricDefinition[]; metadata: SnapshotMetadata }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const reduceMotion = useReducedMotion();
   const [view, setView] = useState<View>((params.get("view") as View) || "overview");
-  const [grain, setGrain] = useState<Grain>(params.get("grain") === "week" ? "week" : "day");
-  const sourceRows = grain === "day" ? daily.rows : weekly.rows;
+  const sourceRows = daily.rows;
   const firstPeriod = sourceRows[0].period;
   const lastPeriod = sourceRows.at(-1)!.period;
-  const initialDailyPeriod = parseQueryDate(params.get("to") ?? params.get("from"), lastPeriod);
-  const [start, setStart] = useState(grain === "day"
-    ? initialDailyPeriod
-    : parseQueryDate(params.get("from"), sourceRows[Math.max(0, sourceRows.length - 10)].period));
-  const [end, setEnd] = useState(grain === "day" ? initialDailyPeriod : parseQueryDate(params.get("to"), lastPeriod));
+  const [selectedDate, setSelectedDate] = useState(parseQueryDate(params.get("to") ?? params.get("from"), lastPeriod));
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const definitions = useMemo(() => metricMap(catalog), [catalog]);
@@ -376,33 +407,22 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const rows = useMemo(() => sourceRows.filter((row) => row.period >= start && row.period <= end), [end, sourceRows, start]);
-  const current = rows.at(-1) ?? sourceRows.at(-1)!;
+  const current = sourceRows.find((row) => row.period === selectedDate) ?? sourceRows.at(-1)!;
+  const rows = [current];
   const dailyTrendRows = useMemo(() => daily.rows.filter((row) => row.period <= current.period), [current.period, daily.rows]);
   const currentIndex = sourceRows.findIndex((row) => row.period === current.period);
   const previous = currentIndex > 0 ? sourceRows[currentIndex - 1] : undefined;
   const latest = sourceRows.at(-1)!.period;
-  const weeklyMode = grain === "week";
   const searched = catalog.filter((metric) => `${metric.label}${metric.key}${metric.description}`.toLowerCase().includes(search.toLowerCase())).slice(0, 12);
 
   const switchView = (next: View) => {
     setView(next);
-    updateUrl({ view: next, grain, from: start, to: end });
+    updateUrl({ view: next, from: selectedDate, to: selectedDate });
   };
 
-  const switchGrain = (next: Grain) => {
-    const nextRows = next === "day" ? daily.rows : weekly.rows;
-    const nextEnd = nextRows.at(-1)!.period;
-    const nextStart = next === "day" ? nextEnd : nextRows[Math.max(0, nextRows.length - 10)].period;
-    setGrain(next);
-    setStart(nextStart);
-    setEnd(nextEnd);
-    updateUrl({ view, grain: next, from: nextStart, to: nextEnd });
-  };
-
-  const setRange = (from: string, to: string) => {
-    setStart(from); setEnd(to);
-    updateUrl({ view, grain, from, to });
+  const selectDate = (date: string) => {
+    setSelectedDate(date);
+    updateUrl({ view, from: date, to: date });
   };
 
   return (
@@ -417,7 +437,7 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
         </nav>
         <div className="sidebar-note">
           <Database size={17} />
-          <div><span>数据快照</span><strong>{metadata.sources.daily.rowCount + metadata.sources.weekly.rowCount} 个周期</strong></div>
+          <div><span>数据快照</span><strong>{metadata.sources.daily.rowCount} 个自然日</strong></div>
         </div>
         <footer><span className="status-dot" /> 已通过数据校验</footer>
       </aside>
@@ -426,24 +446,11 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
         <header className="topbar">
           <button className="search-trigger" onClick={() => setSearchOpen(true)}><Search size={17} /><span>搜索指标</span><kbd><Command size={12} />K</kbd></button>
           <div className="top-controls">
-            <div className="grain-switch" aria-label="日报周报切换">
-              <button className={grain === "day" ? "active" : ""} onClick={() => switchGrain("day")}>日报</button>
-              <button className={grain === "week" ? "active" : ""} onClick={() => switchGrain("week")}>周报</button>
-            </div>
-            {grain === "day" ? (
-              <label className="date-control single-date">
-                <CalendarDays size={16} />
-                <span>查看日期</span>
-                <input aria-label="日报日期" type="date" min={firstPeriod} max={lastPeriod} value={end} onChange={(event) => setRange(event.target.value, event.target.value)} />
-              </label>
-            ) : (
-              <label className="date-control range-date">
-                <CalendarDays size={16} />
-                <input aria-label="周报开始日期" type="date" min={firstPeriod} max={end} value={start} onChange={(event) => setRange(event.target.value, end)} />
-                <span>—</span>
-                <input aria-label="周报结束日期" type="date" min={start} max={lastPeriod} value={end} onChange={(event) => setRange(start, event.target.value)} />
-              </label>
-            )}
+            <label className="date-control single-date">
+              <CalendarDays size={16} />
+              <span>查看日期</span>
+              <input aria-label="日报日期" type="date" min={firstPeriod} max={lastPeriod} value={selectedDate} onChange={(event) => selectDate(event.target.value)} />
+            </label>
           </div>
         </header>
 
@@ -451,30 +458,65 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
           <motion.header className="page-heading" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <div><p className="eyebrow">{VIEWS[view].eyebrow}</p><h1>{VIEWS[view].title}</h1><p>{VIEWS[view].description}</p></div>
             <div className="freshness">
-              <span>{weeklyMode ? "所选周期截至" : "当前查看日期"}</span>
-              <strong>{weeklyMode ? end : formatChineseDate(current.period)}</strong>
-              <small>{weeklyMode ? "周内日均口径" : `自然日口径 · 数据最新至 ${latest}`} · 快照生成于 {new Date(metadata.generatedAt).toLocaleString("zh-CN")}</small>
+              <span>当前查看日期</span>
+              <strong>{formatChineseDate(current.period)}</strong>
+              <small>自然日口径 · 数据最新至 {latest} · 快照生成于 {new Date(metadata.generatedAt).toLocaleString("zh-CN")}</small>
             </div>
           </motion.header>
 
           <AnimatePresence mode="wait">
-            <motion.div key={`${view}-${grain}`} initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.24 }}>
+            <motion.div key={`${view}-${selectedDate}`} initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.24 }}>
               {view === "overview" && (
                 <>
                   <div className="kpi-grid">
                     {KPI_KEYS.map((key) => {
                       const metric = definitions.get(key)!;
-                      return <KpiCard key={key} metric={metric} current={current[key]} previous={previous?.[key]} weekly={weeklyMode} mature={isMature(current, latest, metric.maturityDays, grain)} />;
+                      return <KpiCard key={key} metric={metric} current={current[key]} previous={previous?.[key]} mature={isMature(current, latest, metric.maturityDays)} />;
                     })}
                   </div>
-                  <ConversionFunnels current={current} latest={latest} grain={grain} />
-                  {!weeklyMode && <NewUserTrendChart rows={dailyTrendRows} latest={daily.rows.at(-1)!.period} />}
+                  <ConversionFunnels current={current} latest={latest} />
+                  <DailyDualAxisTrendChart
+                    title="新用户留存趋势图"
+                    rows={dailyTrendRows}
+                    latest={daily.rows.at(-1)!.period}
+                    volumeKey="激活人数"
+                    volumeLabel="激活人数"
+                    comparisonKey="新用户14日留存人数"
+                    comparisonLabel="新用户 14 日留存人数"
+                    rateKey="新用户14日留存率"
+                    rateLabel="新用户 14 日留存率"
+                    maturityDays={14}
+                  />
+                  <DailyDualAxisTrendChart
+                    title="活跃用户留存趋势图"
+                    rows={dailyTrendRows}
+                    latest={daily.rows.at(-1)!.period}
+                    volumeKey="DAU"
+                    volumeLabel="DAU"
+                    comparisonKey="活跃用户14日留存人数"
+                    comparisonLabel="活跃用户 14 日留存人数"
+                    rateKey="活跃用户14日留存率"
+                    rateLabel="活跃用户 14 日留存率"
+                    maturityDays={14}
+                  />
+                  <DailyDualAxisTrendChart
+                    title="活跃用户付费趋势图"
+                    rows={dailyTrendRows}
+                    latest={daily.rows.at(-1)!.period}
+                    volumeKey="DAU"
+                    volumeLabel="DAU"
+                    comparisonKey="总付费人数"
+                    comparisonLabel="总付费人数"
+                    rateNumeratorKey="总付费人数"
+                    rateDenominatorKey="DAU"
+                    rateLabel="活跃用户付费率"
+                  />
                 </>
               )}
 
               {view === "revenue" && (
                 <div className="kpi-grid revenue-kpis">
-                  {["总付费金额", "总付费人数", "客单价", "付费金额_训练营", "付费金额_专栏", "付费金额_会员"].map((key) => <KpiCard key={key} metric={definitions.get(key)!} current={current[key]} previous={previous?.[key]} weekly={weeklyMode} />)}
+                  {["总付费金额", "总付费人数", "客单价", "付费金额_训练营", "付费金额_专栏", "付费金额_会员"].map((key) => <KpiCard key={key} metric={definitions.get(key)!} current={current[key]} previous={previous?.[key]} />)}
                 </div>
               )}
 

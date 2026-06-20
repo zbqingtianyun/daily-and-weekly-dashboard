@@ -1,4 +1,4 @@
-"""只读同步日报、周报，生成可公开部署的静态数据快照。"""
+"""只读同步日报，生成可公开部署的静态数据快照。"""
 
 import json
 import sys
@@ -36,28 +36,28 @@ def read_table(cursor, table, period_field):
     return rows
 
 
-def validate(rows, grain):
+def validate(rows):
     warnings = []
     periods = [row["period"] for row in rows]
     if len(periods) != len(set(periods)):
-        raise ValueError(f"{grain} 数据存在重复周期")
+        raise ValueError("日报数据存在重复日期")
     if periods != sorted(periods):
-        raise ValueError(f"{grain} 数据未按时间升序")
+        raise ValueError("日报数据未按日期升序")
     for index, row in enumerate(rows):
         missing = [field for field in EXPECTED_FIELDS if field not in row]
         if missing:
-            raise ValueError(f"{grain} 第 {index + 1} 行缺少字段：{missing}")
+            raise ValueError(f"日报第 {index + 1} 行缺少字段：{missing}")
         for field, _, _, fmt, _, maturity, _ in FIELDS:
             value = row[field]
             if value is None:
                 if not (field == "点击支付人数_会员"):
-                    warnings.append(f"{grain} {row['period']}：{field} 为空")
+                    warnings.append(f"日报 {row['period']}：{field} 为空")
                 continue
             number = float(value)
             if number < 0:
-                raise ValueError(f"{grain} {row['period']}：{field} 出现负值")
+                raise ValueError(f"日报 {row['period']}：{field} 出现负值")
             if fmt == "percent" and number > 1:
-                warnings.append(f"{grain} {row['period']}：{field} 超过 100%")
+                warnings.append(f"日报 {row['period']}：{field} 超过 100%")
             if maturity and number == 0:
                 latest = datetime.fromisoformat(periods[-1])
                 current = datetime.fromisoformat(row["period"])
@@ -81,12 +81,10 @@ def main():
     with get_connection() as connection:
         with connection.cursor() as cursor:
             daily = read_table(cursor, "日报", "日期")
-            weekly = read_table(cursor, "周报", "当周周一")
 
-    warnings = validate(daily, "日报") + validate(weekly, "周报")
+    warnings = validate(daily)
     generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    write_json("daily.json", {"grain": "day", "rows": daily})
-    write_json("weekly.json", {"grain": "week", "rows": weekly})
+    write_json("daily.json", {"rows": daily})
     write_json("metric-catalog.json", build_catalog())
     write_json(
         "data-metadata.json",
@@ -95,13 +93,11 @@ def main():
             "sourceDatabase": "edu_company",
             "sources": {
                 "daily": {"table": "日报", "rowCount": len(daily), "minPeriod": daily[0]["period"], "maxPeriod": daily[-1]["period"]},
-                "weekly": {"table": "周报", "rowCount": len(weekly), "minPeriod": weekly[0]["period"], "maxPeriod": weekly[-1]["period"]},
             },
             "validation": {"passed": True, "warnings": warnings},
-            "weeklySemantics": "周报中的人数、活跃、金额等指标按周内日均值展示。",
         },
     )
-    print(f"同步完成：日报 {len(daily)} 行，周报 {len(weekly)} 行，警告 {len(warnings)} 条。")
+    print(f"同步完成：日报 {len(daily)} 行，警告 {len(warnings)} 条。")
 
 
 if __name__ == "__main__":

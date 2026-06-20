@@ -37,12 +37,12 @@ export function conversionRate(current: unknown, previous: unknown) {
   return numerator / denominator;
 }
 
-export function isMature(row: DashboardRow, latestPeriod: string, maturityDays: number, grain: "day" | "week") {
+export function isMature(row: DashboardRow, latestPeriod: string, maturityDays: number) {
   if (!maturityDays) return true;
   const rowDate = new Date(`${row.period}T00:00:00`);
   const latest = new Date(`${latestPeriod}T00:00:00`);
   const elapsedDays = Math.floor((latest.getTime() - rowDate.getTime()) / 86400000);
-  return elapsedDays >= (grain === "week" ? Math.ceil(maturityDays / 7) * 7 : maturityDays);
+  return elapsedDays >= maturityDays;
 }
 
 export function metricMap(catalog: MetricDefinition[]) {

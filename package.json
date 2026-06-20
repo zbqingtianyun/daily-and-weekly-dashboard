@@ -1,5 +1,5 @@
 {
-  "name": "daily-and-weekly-dashboard",
+  "name": "daily-dashboard",
   "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@10.12.1",

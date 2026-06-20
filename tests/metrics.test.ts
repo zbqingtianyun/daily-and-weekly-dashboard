@@ -21,8 +21,8 @@ describe("指标工具", () => {
 
   it("留存成熟窗口不会把尾部补零当成真实值", () => {
     const row = { period: "2020-10-10" };
-    expect(isMature(row, "2020-10-12", 7, "day")).toBe(false);
-    expect(isMature({ period: "2020-10-01" }, "2020-10-12", 7, "day")).toBe(true);
+    expect(isMature(row, "2020-10-12", 7)).toBe(false);
+    expect(isMature({ period: "2020-10-01" }, "2020-10-12", 7)).toBe(true);
   });
 
   it("经营总览展示指定的六个核心指标", () => {

@@ -5,7 +5,7 @@
     "group": "growth",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "当期完成激活的用户规模"
   },
@@ -15,7 +15,7 @@
     "group": "retention",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 1,
     "description": "激活后次日仍活跃的新用户数"
   },
@@ -25,7 +25,7 @@
     "group": "retention",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 1,
     "description": "新用户次日留存人数占激活人数比例"
   },
@@ -35,7 +35,7 @@
     "group": "retention",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 7,
     "description": "激活后第 7 日仍活跃的新用户数"
   },
@@ -45,7 +45,7 @@
     "group": "retention",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 7,
     "description": "新用户第 7 日留存比例"
   },
@@ -55,7 +55,7 @@
     "group": "retention",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 14,
     "description": "激活后第 14 日仍活跃的新用户数"
   },
@@ -65,7 +65,7 @@
     "group": "retention",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 14,
     "description": "新用户第 14 日留存比例"
   },
@@ -75,7 +75,7 @@
     "group": "growth",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "当期日活跃用户规模"
   },
@@ -85,7 +85,7 @@
     "group": "growth",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "当期首次产生有效活跃的用户数"
   },
@@ -95,7 +95,7 @@
     "group": "growth",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "首次活跃人数占活跃用户比例"
   },
@@ -105,7 +105,7 @@
     "group": "retention",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 1,
     "description": "活跃用户次日继续活跃人数"
   },
@@ -115,7 +115,7 @@
     "group": "retention",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 1,
     "description": "活跃用户次日继续活跃比例"
   },
@@ -125,7 +125,7 @@
     "group": "retention",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 7,
     "description": "活跃用户第 7 日继续活跃人数"
   },
@@ -135,7 +135,7 @@
     "group": "retention",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 7,
     "description": "活跃用户第 7 日继续活跃比例"
   },
@@ -145,7 +145,7 @@
     "group": "retention",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 14,
     "description": "活跃用户第 14 日继续活跃人数"
   },
@@ -155,7 +155,7 @@
     "group": "retention",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 14,
     "description": "活跃用户第 14 日继续活跃比例"
   },
@@ -165,7 +165,7 @@
     "group": "engagement",
     "format": "minutes",
     "unit": "分钟",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "活跃用户平均单日使用时长"
   },
@@ -175,7 +175,7 @@
     "group": "revenue",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "全部产品付费人数"
   },
@@ -185,7 +185,7 @@
     "group": "revenue",
     "format": "currency",
     "unit": "元",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "全部产品付费金额"
   },
@@ -195,7 +195,7 @@
     "group": "revenue",
     "format": "currency",
     "unit": "元/人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "总付费金额除以总付费人数"
   },
@@ -205,7 +205,7 @@
     "group": "camp",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "训练营付费人数"
   },
@@ -215,7 +215,7 @@
     "group": "revenue",
     "format": "currency",
     "unit": "元",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "训练营付费金额"
   },
@@ -225,7 +225,7 @@
     "group": "revenue",
     "format": "currency",
     "unit": "元/人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "训练营付费金额除以付费人数"
   },
@@ -235,7 +235,7 @@
     "group": "column",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "专栏付费人数"
   },
@@ -245,7 +245,7 @@
     "group": "revenue",
     "format": "currency",
     "unit": "元",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "专栏付费金额"
   },
@@ -255,7 +255,7 @@
     "group": "revenue",
     "format": "currency",
     "unit": "元/人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "专栏付费金额除以付费人数"
   },
@@ -265,7 +265,7 @@
     "group": "membership",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "会员付费人数"
   },
@@ -275,7 +275,7 @@
     "group": "revenue",
     "format": "currency",
     "unit": "元",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "会员付费金额"
   },
@@ -285,7 +285,7 @@
     "group": "revenue",
     "format": "currency",
     "unit": "元/人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "会员付费金额除以付费人数"
   },
@@ -295,7 +295,7 @@
     "group": "camp",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "看到训练营入口的用户数"
   },
@@ -305,7 +305,7 @@
     "group": "camp",
     "format": "integer",
     "unit": "次",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "训练营入口曝光次数"
   },
@@ -315,7 +315,7 @@
     "group": "camp",
     "format": "decimal",
     "unit": "次/人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "训练营人均曝光频次"
   },
@@ -325,7 +325,7 @@
     "group": "camp",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "App 内点击训练营的用户数"
   },
@@ -335,7 +335,7 @@
     "group": "camp",
     "format": "integer",
     "unit": "次",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "App 内训练营点击次数"
   },
@@ -345,7 +345,7 @@
     "group": "camp",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "训练营按用户计算的点击率"
   },
@@ -355,7 +355,7 @@
     "group": "camp",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "训练营按次数计算的点击率"
   },
@@ -365,7 +365,7 @@
     "group": "camp",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "浏览训练营商品详情的用户数"
   },
@@ -375,7 +375,7 @@
     "group": "camp",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "App 内浏览训练营商详用户数"
   },
@@ -385,7 +385,7 @@
     "group": "camp",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "完成训练营预约的用户数"
   },
@@ -395,7 +395,7 @@
     "group": "camp",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "商详浏览到预约的转化率"
   },
@@ -405,7 +405,7 @@
     "group": "camp",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "预约到付费的转化率"
   },
@@ -415,7 +415,7 @@
     "group": "camp",
     "format": "currency",
     "unit": "元/人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "每位商详访问用户贡献的收入"
   },
@@ -425,7 +425,7 @@
     "group": "column",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "看到专栏入口的用户数"
   },
@@ -435,7 +435,7 @@
     "group": "column",
     "format": "integer",
     "unit": "次",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "专栏入口曝光次数"
   },
@@ -445,7 +445,7 @@
     "group": "column",
     "format": "decimal",
     "unit": "次/人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "专栏人均曝光频次"
   },
@@ -455,7 +455,7 @@
     "group": "column",
     "format": "decimal",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "点击专栏入口的用户数"
   },
@@ -465,7 +465,7 @@
     "group": "column",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "专栏按用户计算的点击率"
   },
@@ -475,7 +475,7 @@
     "group": "column",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "专栏按次数计算的点击率"
   },
@@ -485,7 +485,7 @@
     "group": "column",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "浏览专栏商品详情的用户数"
   },
@@ -495,7 +495,7 @@
     "group": "column",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "App 内浏览专栏商详的用户数"
   },
@@ -505,7 +505,7 @@
     "group": "column",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "完成专栏下单的用户数"
   },
@@ -515,7 +515,7 @@
     "group": "column",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "商详浏览到下单的转化率"
   },
@@ -525,7 +525,7 @@
     "group": "column",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "下单到付费的转化率"
   },
@@ -535,7 +535,7 @@
     "group": "column",
     "format": "currency",
     "unit": "元/人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "每位商详访问用户贡献的收入"
   },
@@ -545,7 +545,7 @@
     "group": "membership",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "浏览会员商品详情的用户数"
   },
@@ -555,7 +555,7 @@
     "group": "membership",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "领取会员权益的用户数"
   },
@@ -565,7 +565,7 @@
     "group": "membership",
     "format": "percent",
     "unit": "%",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "商详浏览到领取会员的转化率"
   },
@@ -575,7 +575,7 @@
     "group": "membership",
     "format": "integer",
     "unit": "人",
-    "aggregation": "weekly_daily_average",
+    "aggregation": "daily_value",
     "maturityDays": 0,
     "description": "点击会员支付的用户数"
   }

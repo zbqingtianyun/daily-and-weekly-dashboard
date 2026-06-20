@@ -1,4 +1,4 @@
-"""日报、周报的显式指标目录。字段、单位和业务分组均来自两张源表。"""
+"""日报的显式指标目录。字段、单位和业务分组均来自日报源表。"""
 
 FIELDS = [
     ("激活人数", "激活人数", "growth", "integer", "人", 0, "当期完成激活的用户规模"),
@@ -70,7 +70,7 @@ def build_catalog():
             "group": group,
             "format": fmt,
             "unit": unit,
-            "aggregation": "weekly_daily_average",
+            "aggregation": "daily_value",
             "maturityDays": maturity,
             "description": description,
         }

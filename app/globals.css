@@ -43,11 +43,8 @@ main { min-width: 0; }
 .search-trigger { min-width: 240px; border: 1px solid var(--line); background: rgba(255,255,253,.72); color: #888c94; padding: 9px 10px 9px 13px; border-radius: 12px; display: flex; gap: 9px; align-items: center; cursor: pointer; box-shadow: 0 5px 14px rgba(29,29,31,.025); }
 .search-trigger span { font-size: 12px; }
 kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 3px 6px; border: 1px solid #dddeda; border-radius: 6px; background: #fff; color: #91949a; font-size: 10px; }
-.top-controls, .grain-switch, .date-control { display: flex; align-items: center; }
+.top-controls, .date-control { display: flex; align-items: center; }
 .top-controls { gap: 10px; }
-.grain-switch { background: #e8e8e4; border-radius: 11px; padding: 3px; }
-.grain-switch button { border: 0; background: transparent; padding: 7px 13px; border-radius: 8px; font-size: 12px; color: #7a7e86; cursor: pointer; }
-.grain-switch button.active { background: white; color: var(--ink); box-shadow: 0 3px 10px rgba(29,29,31,.08); }
 .date-control { gap: 8px; border: 1px solid var(--line); background: rgba(255,255,253,.78); padding: 8px 11px; border-radius: 11px; color: #858992; }
 .date-control input { border: 0; background: transparent; color: #555962; font-size: 11px; width: 105px; outline: 0; }
 .content { padding: 42px 36px 64px; max-width: 1680px; margin: auto; }
@@ -186,7 +183,6 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
   .single-date { padding: 8px; gap: 4px; }
   .single-date > svg,.single-date > span { display: none; }
   .single-date input { width: 104px; }
-  .range-date { display: none; }
   .content { padding: 28px 14px 100px; }
   .page-heading { display: block; }
   .freshness { align-items: flex-start; text-align: left; margin-top: 20px; }

@@ -7,7 +7,7 @@ export interface MetricDefinition {
   group: MetricGroup;
   format: MetricFormat;
   unit: string;
-  aggregation: "daily_value" | "weekly_daily_average";
+  aggregation: "daily_value";
   maturityDays: number;
   description: string;
 }
@@ -18,7 +18,6 @@ export interface DashboardRow {
 }
 
 export interface DashboardDataset {
-  grain: "day" | "week";
   rows: DashboardRow[];
 }
 
@@ -27,9 +26,7 @@ export interface SnapshotMetadata {
   sourceDatabase: string;
   sources: {
     daily: { table: string; rowCount: number; minPeriod: string; maxPeriod: string };
-    weekly: { table: string; rowCount: number; minPeriod: string; maxPeriod: string };
   };
   validation: { passed: boolean; warnings: string[] };
-  weeklySemantics: string;
 }
 

@@ -1,10 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test("仪表盘可切换日报、周报与业务页面", async ({ page }) => {
+test("仪表盘可切换业务页面", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "经营总览" })).toBeVisible();
-  await page.getByRole("button", { name: "周报" }).click();
-  await expect(page.getByText("周内日均口径")).toBeVisible();
   await page.getByRole("button", { name: "收入与付费" }).click();
   await expect(page.getByRole("heading", { name: "收入与付费" })).toBeVisible();
 });
@@ -39,13 +37,12 @@ test("日报可选择指定日期并展示该日数据", async ({ page }) => {
 
   await expect(page.getByText("2020年10月5日")).toBeVisible();
   await expect(page.getByRole("article").filter({ hasText: "DAU" }).getByText("564", { exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/grain=day/);
   await expect(page).toHaveURL(/from=2020-10-05/);
   await expect(page).toHaveURL(/to=2020-10-05/);
 });
 
 test("经营总览展示活跃留存与活跃付费转化漏斗", async ({ page }) => {
-  await page.goto("/?grain=day&from=2020-09-28&to=2020-09-28");
+  await page.goto("/?from=2020-09-28&to=2020-09-28");
 
   await expect(page.getByRole("article")).toHaveCount(6);
   const retentionFunnel = page.getByRole("region", { name: "活跃留存转化漏斗" });
@@ -67,16 +64,29 @@ test("经营总览展示活跃留存与活跃付费转化漏斗", async ({ page 
   await expect(page.getByRole("heading", { name: "留存快照" })).toHaveCount(0);
 });
 
-test("新用户变化趋势图仅在日报经营总览展示", async ({ page }) => {
-  await page.goto("/?grain=day&from=2020-09-28&to=2020-09-28");
+test("日报经营总览展示新用户和活跃用户留存趋势图", async ({ page }) => {
+  await page.goto("/?from=2020-09-28&to=2020-09-28");
 
-  const trend = page.getByRole("region", { name: "新用户变化趋势图" });
-  await expect(trend).toBeVisible();
-  await expect(trend.getByRole("heading", { name: "新用户变化趋势图" })).toBeVisible();
-  await expect(trend.getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();
-  await expect(trend.getByText(/激活人数 \/ 新用户 14 日留存人数 \/ 新用户 14 日留存率/)).toBeVisible();
+  const newUserTrend = page.getByRole("region", { name: "新用户留存趋势图" });
+  await expect(newUserTrend).toBeVisible();
+  await expect(newUserTrend.getByRole("heading", { name: "新用户留存趋势图" })).toBeVisible();
+  await expect(newUserTrend.getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();
+  await expect(newUserTrend.getByText(/激活人数 \/ 新用户 14 日留存人数 \/ 新用户 14 日留存率/)).toBeVisible();
 
-  await page.getByRole("button", { name: "周报" }).click();
-  await expect(page.getByRole("region", { name: "新用户变化趋势图" })).toHaveCount(0);
+  const activeUserTrend = page.getByRole("region", { name: "活跃用户留存趋势图" });
+  await expect(activeUserTrend).toBeVisible();
+  await expect(activeUserTrend.getByRole("heading", { name: "活跃用户留存趋势图" })).toBeVisible();
+  await expect(activeUserTrend.getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();
+  await expect(activeUserTrend.getByText(/DAU \/ 活跃用户 14 日留存人数 \/ 活跃用户 14 日留存率/)).toBeVisible();
+});
+
+test("日报经营总览展示活跃用户付费趋势图", async ({ page }) => {
+  await page.goto("/?from=2020-09-28&to=2020-09-28");
+
+  const paymentTrend = page.getByRole("region", { name: "活跃用户付费趋势图" });
+  await expect(paymentTrend).toBeVisible();
+  await expect(paymentTrend.getByRole("heading", { name: "活跃用户付费趋势图" })).toBeVisible();
+  await expect(paymentTrend.getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();
+  await expect(paymentTrend.getByText(/DAU \/ 总付费人数 \/ 活跃用户付费率/)).toBeVisible();
 });
 
