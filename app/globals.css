@@ -70,12 +70,13 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
 .delta { display: flex; align-items: center; font-weight: 700; color: #6d7180; }
 .delta.up { color: var(--blue); }
 .delta.down { color: #7d657a; }
-.conversion-funnel { min-height: 0; margin-bottom: 16px; padding-bottom: 24px; overflow: hidden; }
+.conversion-funnel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.conversion-funnel { min-height: 0; padding-bottom: 24px; overflow: hidden; }
 .conversion-funnel .panel-header { align-items: center; }
 .funnel-overall { display: flex; flex-direction: column; align-items: flex-end; padding: 9px 13px; border-radius: 13px; background: var(--blue-open); color: var(--blue); }
 .funnel-overall span { font-size: 9px; letter-spacing: .08em; }
 .funnel-overall strong { margin-top: 2px; font-size: 19px; font-variant-numeric: tabular-nums; }
-.funnel-body { display: flex; flex-direction: column; align-items: center; padding: 7px 8% 0; }
+.funnel-body { display: flex; flex-direction: column; align-items: center; padding: 7px 2% 0; }
 .funnel-step { width: 100%; display: flex; flex-direction: column; align-items: center; }
 .funnel-stage { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px clamp(22px, 5vw, 64px); color: #fff; clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); transition: width .35s ease, transform .2s ease; }
 .funnel-stage:hover { transform: scale(1.012); }
@@ -169,6 +170,7 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
   .span-4,.span-5,.span-6,.span-7,.span-8 { grid-column: span 12; }
   .topbar { padding-inline: 22px; }
   .content { padding-inline: 22px; }
+  .conversion-funnel-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .app-shell { display: block; }

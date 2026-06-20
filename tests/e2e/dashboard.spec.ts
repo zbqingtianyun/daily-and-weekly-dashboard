@@ -28,14 +28,20 @@ test("日报可选择指定日期并展示该日数据", async ({ page }) => {
   await expect(page).toHaveURL(/to=2020-10-05/);
 });
 
-test("经营总览展示核心经营转化漏斗", async ({ page }) => {
+test("经营总览展示活跃留存与活跃付费转化漏斗", async ({ page }) => {
   await page.goto("/?grain=day&from=2020-09-28&to=2020-09-28");
 
-  const funnel = page.getByRole("region", { name: "核心经营转化漏斗" });
-  await expect(funnel).toBeVisible();
-  await expect(funnel.getByText("DAU", { exact: true })).toBeVisible();
-  await expect(funnel.getByText("活跃用户 14 日留存人数", { exact: true })).toBeVisible();
-  await expect(funnel.getByText("总付费人数", { exact: true })).toBeVisible();
-  await expect(funnel.getByText("整体转化率")).toBeVisible();
+  const retentionFunnel = page.getByRole("region", { name: "活跃留存转化漏斗" });
+  await expect(retentionFunnel).toBeVisible();
+  await expect(retentionFunnel.getByText("DAU", { exact: true })).toBeVisible();
+  await expect(retentionFunnel.getByText("活跃用户 7 日留存人数", { exact: true })).toBeVisible();
+  await expect(retentionFunnel.getByText("活跃用户 14 日留存人数", { exact: true })).toBeVisible();
+  await expect(retentionFunnel.getByText("整体转化率")).toBeVisible();
+
+  const paymentFunnel = page.getByRole("region", { name: "活跃付费转化漏斗" });
+  await expect(paymentFunnel).toBeVisible();
+  await expect(paymentFunnel.getByText("DAU", { exact: true })).toBeVisible();
+  await expect(paymentFunnel.getByText("总付费人数", { exact: true })).toBeVisible();
+  await expect(paymentFunnel.getByText("整体转化率")).toBeVisible();
 });
 

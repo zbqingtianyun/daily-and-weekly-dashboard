@@ -176,28 +176,15 @@ function KpiCard({ metric, current, previous, weekly, mature = true }: { metric:
   );
 }
 
-function ConversionFunnel({ current, latest, grain }: { current: DashboardRow; latest: string; grain: Grain }) {
-  const retentionMature = isMature(current, latest, 14, grain);
-  const toNumber = (value: unknown) => value === null || value === undefined || value === "" ? null : Number(value);
-  const dau = toNumber(current.DAU);
-  const retained = retentionMature ? toNumber(current["活跃用户14日留存人数"]) : null;
-  const paid = toNumber(current["总付费人数"]);
-  const retentionRate = conversionRate(retained, dau);
-  const paymentRate = conversionRate(paid, retained);
-  const overallRate = conversionRate(paid, dau);
-  const stages = [
-    { key: "dau", label: "DAU", value: dau, width: 100 },
-    { key: "retained", label: "活跃用户 14 日留存人数", value: retained, width: 78 },
-    { key: "paid", label: "总付费人数", value: paid, width: 56 }
-  ];
-  const rates = [retentionRate, paymentRate];
-
+function FunnelCard({ title, stages }: { title: string; stages: { key: string; label: string; value: number | null }[] }) {
+  const rates = stages.slice(1).map((stage, index) => conversionRate(stage.value, stages[index].value));
+  const overallRate = conversionRate(stages.at(-1)?.value, stages[0].value);
   return (
-    <section className="panel conversion-funnel" aria-labelledby="conversion-funnel-title">
+    <section className="panel conversion-funnel" aria-label={title}>
       <header className="panel-header">
         <div>
-          <h2 id="conversion-funnel-title">核心经营转化漏斗</h2>
-          <p>按所选周期观察活跃、14 日留存与付费规模；阶段统计口径可能不严格包含</p>
+          <h2>{title}</h2>
+          <p>阶段统计口径可能不严格包含</p>
         </div>
         <div className="funnel-overall">
           <span>整体转化率</span>
@@ -207,7 +194,7 @@ function ConversionFunnel({ current, latest, grain }: { current: DashboardRow; l
       <div className="funnel-body">
         {stages.map((stage, index) => (
           <div className="funnel-step" key={stage.key}>
-            <div className={`funnel-stage funnel-stage-${index + 1}`} style={{ width: `${stage.width}%` }}>
+            <div className={`funnel-stage funnel-stage-${index + 1}`} style={{ width: `${100 - index * (stages.length === 2 ? 32 : 22)}%` }}>
               <span>{stage.label}</span>
               <strong>{stage.value === null || !Number.isFinite(stage.value) ? "待成熟" : formatMetric(stage.value, "integer")}</strong>
             </div>
@@ -222,6 +209,34 @@ function ConversionFunnel({ current, latest, grain }: { current: DashboardRow; l
         ))}
       </div>
     </section>
+  );
+}
+
+function ConversionFunnels({ current, latest, grain }: { current: DashboardRow; latest: string; grain: Grain }) {
+  const toNumber = (value: unknown) => value === null || value === undefined || value === "" ? null : Number(value);
+  const dau = toNumber(current.DAU);
+  const retained7 = isMature(current, latest, 7, grain) ? toNumber(current["活跃用户7日留存人数"]) : null;
+  const retained14 = isMature(current, latest, 14, grain) ? toNumber(current["活跃用户14日留存人数"]) : null;
+  const paid = toNumber(current["总付费人数"]);
+
+  return (
+    <div className="conversion-funnel-grid">
+      <FunnelCard
+        title="活跃留存转化漏斗"
+        stages={[
+          { key: "retention-dau", label: "DAU", value: dau },
+          { key: "retention-7d", label: "活跃用户 7 日留存人数", value: retained7 },
+          { key: "retention-14d", label: "活跃用户 14 日留存人数", value: retained14 }
+        ]}
+      />
+      <FunnelCard
+        title="活跃付费转化漏斗"
+        stages={[
+          { key: "payment-dau", label: "DAU", value: dau },
+          { key: "payment-total", label: "总付费人数", value: paid }
+        ]}
+      />
+    </div>
   );
 }
 
@@ -426,7 +441,7 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
                       return <KpiCard key={key} metric={metric} current={current[key]} previous={previous?.[key]} weekly={weeklyMode} mature={isMature(current, latest, metric.maturityDays, grain)} />;
                     })}
                   </div>
-                  <ConversionFunnel current={current} latest={latest} grain={grain} />
+                  <ConversionFunnels current={current} latest={latest} grain={grain} />
                   <div className="dashboard-grid">
                     <SectionCard className="span-8" title="活跃与新增趋势" subtitle={`${rows.length} 个${weeklyMode ? "周" : "自然日"} · 鼠标滚轮配合 Shift 可缩放`}>
                       <LineChart rows={rows} keys={["DAU", "激活人数", "首次活跃人数"]} secondaryKey="DAU" />
