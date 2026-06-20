@@ -9,6 +9,22 @@ test("仪表盘可切换日报、周报与业务页面", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "收入与付费" })).toBeVisible();
 });
 
+test("增长与收入页面不再展示旧图表", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "增长与留存" }).click();
+  await expect(page.getByRole("heading", { name: "用户增长趋势" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "当前留存状态" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "新用户留存趋势" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "活跃用户留存趋势" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "收入与付费" }).click();
+  await expect(page.getByRole("article")).toHaveCount(6);
+  await expect(page.getByRole("heading", { name: "收入走势" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "产品收入结构" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "付费人数" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "客单价" })).toHaveCount(0);
+});
+
 test("指标搜索可通过键盘打开", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "移动端不提供 Ctrl+K 键盘入口");
   await page.goto("/");
@@ -31,6 +47,7 @@ test("日报可选择指定日期并展示该日数据", async ({ page }) => {
 test("经营总览展示活跃留存与活跃付费转化漏斗", async ({ page }) => {
   await page.goto("/?grain=day&from=2020-09-28&to=2020-09-28");
 
+  await expect(page.getByRole("article")).toHaveCount(6);
   const retentionFunnel = page.getByRole("region", { name: "活跃留存转化漏斗" });
   await expect(retentionFunnel).toBeVisible();
   await expect(retentionFunnel.getByText("DAU", { exact: true })).toBeVisible();
@@ -43,5 +60,10 @@ test("经营总览展示活跃留存与活跃付费转化漏斗", async ({ page 
   await expect(paymentFunnel.getByText("DAU", { exact: true })).toBeVisible();
   await expect(paymentFunnel.getByText("总付费人数", { exact: true })).toBeVisible();
   await expect(paymentFunnel.getByText("整体转化率")).toBeVisible();
+
+  await expect(page.getByRole("heading", { name: "活跃与新增趋势" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "变化雷达" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "产品收入结构" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "留存快照" })).toHaveCount(0);
 });
 

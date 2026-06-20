@@ -124,36 +124,6 @@ function LineChart({ rows, keys, labels, percentKeys = [], secondaryKey }: { row
   return <Chart option={option} />;
 }
 
-function StackedRevenue({ rows }: { rows: DashboardRow[] }) {
-  const keys = ["付费金额_训练营", "付费金额_专栏", "付费金额_会员"];
-  const colors = [COLORS.blue, COLORS.violet, COLORS.gold];
-  const option: EChartsOption = {
-    ...baseChart(),
-    xAxis: { type: "category", data: rows.map((row) => row.period.slice(5)), axisTick: { show: false }, axisLine: { lineStyle: { color: COLORS.grid } } },
-    series: keys.map((key, index) => ({
-      name: key.replace("付费金额_", ""),
-      type: "bar",
-      stack: "revenue",
-      barMaxWidth: 24,
-      itemStyle: { color: colors[index], borderRadius: index === 2 ? [5, 5, 0, 0] : 0 },
-      data: rows.map((row) => Number(row[key] ?? 0))
-    }))
-  };
-  return <Chart option={option} />;
-}
-
-function SectionCard({ title, subtitle, action, className = "", children }: { title: string; subtitle: string; action?: React.ReactNode; className?: string; children: React.ReactNode }) {
-  return (
-    <section className={`panel ${className}`}>
-      <header className="panel-header">
-        <div><h2>{title}</h2><p>{subtitle}</p></div>
-        {action}
-      </header>
-      {children}
-    </section>
-  );
-}
-
 function KpiCard({ metric, current, previous, weekly, mature = true }: { metric: MetricDefinition; current: unknown; previous: unknown; weekly: boolean; mature?: boolean }) {
   const change = mature ? delta(current, previous) : null;
   return (
@@ -236,54 +206,6 @@ function ConversionFunnels({ current, latest, grain }: { current: DashboardRow; 
           { key: "payment-total", label: "总付费人数", value: paid }
         ]}
       />
-    </div>
-  );
-}
-
-function ChangeRanking({ current, previous, catalog }: { current: DashboardRow; previous?: DashboardRow; catalog: MetricDefinition[] }) {
-  const keys = ["DAU", "激活人数", "总付费金额", "总付费人数", "平均单日使用时长（分）"];
-  const items = keys.map((key) => {
-    const metric = catalog.find((item) => item.key === key)!;
-    return { metric, value: delta(current[key], previous?.[key]) };
-  }).filter((item) => item.value !== null).sort((a, b) => Math.abs(b.value!) - Math.abs(a.value!));
-  return (
-    <div className="ranking">
-      {items.map(({ metric, value }, index) => (
-        <div className="ranking-row" key={metric.key}>
-          <span className="rank">{String(index + 1).padStart(2, "0")}</span>
-          <span className="ranking-label">{metric.label}</span>
-          <div className="ranking-track"><i style={{ width: `${Math.min(Math.abs(value!) * 100, 100)}%` }} /></div>
-          <strong className={value! >= 0 ? "positive" : ""}>{value! >= 0 ? "+" : ""}{(value! * 100).toFixed(1)}%</strong>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function RetentionGrid({ current, latest, grain, definitions }: { current: DashboardRow; latest: string; grain: Grain; definitions: MetricDefinition[] }) {
-  const groups = [
-    { title: "新用户留存", keys: ["新用户次日留存率", "新用户7日留存率", "新用户14日留存率"] },
-    { title: "活跃用户留存", keys: ["活跃用户次日留存率", "活跃用户7日留存率", "活跃用户14日留存率"] }
-  ];
-  return (
-    <div className="retention-groups">
-      {groups.map((group) => (
-        <div className="retention-group" key={group.title}>
-          <h3>{group.title}</h3>
-          {group.keys.map((key) => {
-            const metric = definitions.find((item) => item.key === key)!;
-            const mature = isMature(current, latest, metric.maturityDays, grain);
-            const value = Number(current[key] ?? 0);
-            const subject = group.title.replace("留存", "");
-            return (
-              <div className="retention-item" key={key}>
-                <div><span>{metric.label.replace(subject, "")}</span><strong>{mature ? formatMetric(value, "percent") : "待成熟"}</strong></div>
-                <div className="retention-track"><i style={{ width: mature ? `${Math.min(value * 100, 100)}%` : "0%" }} /></div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
     </div>
   );
 }
@@ -442,68 +364,13 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
                     })}
                   </div>
                   <ConversionFunnels current={current} latest={latest} grain={grain} />
-                  <div className="dashboard-grid">
-                    <SectionCard className="span-8" title="活跃与新增趋势" subtitle={`${rows.length} 个${weeklyMode ? "周" : "自然日"} · 鼠标滚轮配合 Shift 可缩放`}>
-                      <LineChart rows={rows} keys={["DAU", "激活人数", "首次活跃人数"]} secondaryKey="DAU" />
-                    </SectionCard>
-                    <SectionCard className="span-4" title="变化雷达" subtitle="按绝对变化幅度排序">
-                      <ChangeRanking current={current} previous={previous} catalog={catalog} />
-                    </SectionCard>
-                    <SectionCard className="span-7" title="产品收入结构" subtitle={weeklyMode ? "人民币 · 周内日均" : "人民币 · 自然日"}>
-                      <StackedRevenue rows={rows} />
-                    </SectionCard>
-                    <SectionCard className="span-5" title="留存快照" subtitle="未达到观察窗口的数据标记为待成熟">
-                      <RetentionGrid current={current} latest={latest} grain={grain} definitions={catalog} />
-                    </SectionCard>
-                  </div>
                 </>
-              )}
-
-              {view === "growth" && (
-                <div className="dashboard-grid">
-                  <SectionCard className="span-8" title="用户增长趋势" subtitle={weeklyMode ? "人数均为周内日均" : "激活、首次活跃与活跃规模"}>
-                    <LineChart rows={rows} keys={["激活人数", "首次活跃人数", "DAU"]} secondaryKey="DAU" />
-                  </SectionCard>
-                  <SectionCard className="span-4" title="当前留存状态" subtitle={`观察周期截至 ${latest}`}>
-                    <RetentionGrid current={current} latest={latest} grain={grain} definitions={catalog} />
-                  </SectionCard>
-                  <SectionCard className="span-6" title="新用户留存趋势" subtitle="次日 / 7 日 / 14 日；尾部未成熟数据自动隐藏">
-                    <LineChart rows={rows.map((row) => ({ ...row,
-                      新用户次日留存率: isMature(row, latest, 1, grain) ? row["新用户次日留存率"] : null,
-                      新用户7日留存率: isMature(row, latest, 7, grain) ? row["新用户7日留存率"] : null,
-                      新用户14日留存率: isMature(row, latest, 14, grain) ? row["新用户14日留存率"] : null
-                    }))} keys={["新用户次日留存率", "新用户7日留存率", "新用户14日留存率"]} percentKeys={["新用户次日留存率", "新用户7日留存率", "新用户14日留存率"]} />
-                  </SectionCard>
-                  <SectionCard className="span-6" title="活跃用户留存趋势" subtitle="次日 / 7 日 / 14 日；仅展示成熟周期">
-                    <LineChart rows={rows.map((row) => ({ ...row,
-                      活跃用户次日留存率: isMature(row, latest, 1, grain) ? row["活跃用户次日留存率"] : null,
-                      活跃用户7日留存率: isMature(row, latest, 7, grain) ? row["活跃用户7日留存率"] : null,
-                      活跃用户14日留存率: isMature(row, latest, 14, grain) ? row["活跃用户14日留存率"] : null
-                    }))} keys={["活跃用户次日留存率", "活跃用户7日留存率", "活跃用户14日留存率"]} percentKeys={["活跃用户次日留存率", "活跃用户7日留存率", "活跃用户14日留存率"]} />
-                  </SectionCard>
-                </div>
               )}
 
               {view === "revenue" && (
-                <>
-                  <div className="kpi-grid revenue-kpis">
-                    {["总付费金额", "总付费人数", "客单价", "付费金额_训练营", "付费金额_专栏", "付费金额_会员"].map((key) => <KpiCard key={key} metric={definitions.get(key)!} current={current[key]} previous={previous?.[key]} weekly={weeklyMode} />)}
-                  </div>
-                  <div className="dashboard-grid">
-                    <SectionCard className="span-8" title="收入走势" subtitle={weeklyMode ? "总收入与各产品收入 · 周内日均" : "总收入与各产品收入"}>
-                      <LineChart rows={rows} keys={["总付费金额", "付费金额_训练营", "付费金额_专栏"]} labels={["总收入", "训练营", "专栏"]} />
-                    </SectionCard>
-                    <SectionCard className="span-4" title="产品收入结构" subtitle="训练营 / 专栏 / 会员">
-                      <StackedRevenue rows={rows} />
-                    </SectionCard>
-                    <SectionCard className="span-6" title="付费人数" subtitle={weeklyMode ? "周内日均付费人数" : "按产品拆分"}>
-                      <LineChart rows={rows} keys={["总付费人数", "付费人数_训练营", "付费人数_专栏"]} />
-                    </SectionCard>
-                    <SectionCard className="span-6" title="客单价" subtitle="独立量纲展示，避免与收入双轴混用">
-                      <LineChart rows={rows} keys={["客单价", "客单价_训练营", "客单价_专栏"]} />
-                    </SectionCard>
-                  </div>
-                </>
+                <div className="kpi-grid revenue-kpis">
+                  {["总付费金额", "总付费人数", "客单价", "付费金额_训练营", "付费金额_专栏", "付费金额_会员"].map((key) => <KpiCard key={key} metric={definitions.get(key)!} current={current[key]} previous={previous?.[key]} weekly={weeklyMode} />)}
+                </div>
               )}
 
               {view === "conversion" && (
