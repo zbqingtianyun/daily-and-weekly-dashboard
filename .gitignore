@@ -9,6 +9,6 @@ node_modules/
 .next/
 playwright-report/
 test-results/
+# Vercel 本地项目绑定信息
 .vercel/
 *.tsbuildinfo
-
