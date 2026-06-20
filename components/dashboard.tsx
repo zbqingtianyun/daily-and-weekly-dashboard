@@ -124,6 +124,109 @@ function LineChart({ rows, keys, labels, percentKeys = [], secondaryKey }: { row
   return <Chart option={option} />;
 }
 
+function NewUserTrendChart({ rows, latest }: { rows: DashboardRow[]; latest: string }) {
+  const option = useMemo<EChartsOption>(() => {
+    const base = baseChart();
+    return {
+      ...base,
+      grid: { left: 20, right: 24, top: 48, bottom: 54, containLabel: true },
+      legend: {
+        top: 0,
+        right: 0,
+        icon: "circle",
+        itemWidth: 8,
+        itemHeight: 8,
+        textStyle: { color: COLORS.slate }
+      },
+      xAxis: {
+        type: "category",
+        boundaryGap: true,
+        data: rows.map((row) => row.period),
+        axisLine: { lineStyle: { color: COLORS.grid } },
+        axisTick: { show: false },
+        axisLabel: {
+          color: "#8d929b",
+          fontSize: 10,
+          hideOverlap: true,
+          formatter: (value: string) => value.slice(5)
+        }
+      },
+      yAxis: [
+        {
+          type: "value",
+          name: "人数",
+          position: "left",
+          min: 0,
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { color: "#8d929b", fontSize: 10 },
+          nameTextStyle: { color: "#8d929b", fontSize: 10 },
+          splitLine: { lineStyle: { color: COLORS.grid, type: "dashed" } }
+        },
+        {
+          type: "value",
+          name: "留存率",
+          position: "right",
+          min: 0,
+          axisLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { color: "#8d929b", fontSize: 10, formatter: "{value}%" },
+          nameTextStyle: { color: "#8d929b", fontSize: 10 },
+          splitLine: { show: false }
+        }
+      ],
+      dataZoom: [
+        { type: "inside", start: 0, end: 100, zoomOnMouseWheel: "shift", moveOnMouseMove: true },
+        { type: "slider", start: 0, end: 100, height: 16, bottom: 6, borderColor: "transparent", backgroundColor: "#efefeb", fillerColor: "rgba(47,107,255,.16)", handleStyle: { color: COLORS.blue }, textStyle: { color: "#8d929b", fontSize: 9 } }
+      ],
+      series: [
+        {
+          name: "激活人数",
+          type: "bar",
+          yAxisIndex: 0,
+          barMaxWidth: 18,
+          itemStyle: { color: "rgba(47,107,255,.72)", borderRadius: [4, 4, 0, 0] },
+          data: rows.map((row) => row["激活人数"] === null ? null : Number(row["激活人数"]))
+        },
+        {
+          name: "新用户 14 日留存人数",
+          type: "line",
+          yAxisIndex: 0,
+          smooth: 0.25,
+          showSymbol: false,
+          connectNulls: false,
+          lineStyle: { width: 2.5, color: COLORS.violet },
+          itemStyle: { color: COLORS.violet },
+          data: rows.map((row) => isMature(row, latest, 14, "day") && row["新用户14日留存人数"] !== null ? Number(row["新用户14日留存人数"]) : null)
+        },
+        {
+          name: "新用户 14 日留存率",
+          type: "line",
+          yAxisIndex: 1,
+          smooth: 0.25,
+          showSymbol: false,
+          connectNulls: false,
+          lineStyle: { width: 2, type: "dashed", color: COLORS.gold },
+          itemStyle: { color: COLORS.gold },
+          data: rows.map((row) => isMature(row, latest, 14, "day") && row["新用户14日留存率"] !== null ? Number(row["新用户14日留存率"]) * 100 : null)
+        }
+      ]
+    };
+  }, [latest, rows]);
+
+  return (
+    <section className="panel new-user-trend" aria-label="新用户变化趋势图">
+      <header className="panel-header">
+        <div>
+          <h2>新用户变化趋势图</h2>
+          <p>{rows[0]?.period} 至 {rows.at(-1)?.period} · 激活人数 / 新用户 14 日留存人数 / 新用户 14 日留存率</p>
+        </div>
+      </header>
+      <Chart option={option} height={380} />
+    </section>
+  );
+}
+
 function KpiCard({ metric, current, previous, weekly, mature = true }: { metric: MetricDefinition; current: unknown; previous: unknown; weekly: boolean; mature?: boolean }) {
   const change = mature ? delta(current, previous) : null;
   return (
@@ -275,6 +378,7 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
 
   const rows = useMemo(() => sourceRows.filter((row) => row.period >= start && row.period <= end), [end, sourceRows, start]);
   const current = rows.at(-1) ?? sourceRows.at(-1)!;
+  const dailyTrendRows = useMemo(() => daily.rows.filter((row) => row.period <= current.period), [current.period, daily.rows]);
   const currentIndex = sourceRows.findIndex((row) => row.period === current.period);
   const previous = currentIndex > 0 ? sourceRows[currentIndex - 1] : undefined;
   const latest = sourceRows.at(-1)!.period;
@@ -364,6 +468,7 @@ export default function Dashboard({ daily, weekly, catalog, metadata }: { daily:
                     })}
                   </div>
                   <ConversionFunnels current={current} latest={latest} grain={grain} />
+                  {!weeklyMode && <NewUserTrendChart rows={dailyTrendRows} latest={daily.rows.at(-1)!.period} />}
                 </>
               )}
 

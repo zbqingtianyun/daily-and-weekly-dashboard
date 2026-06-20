@@ -67,3 +67,16 @@ test("经营总览展示活跃留存与活跃付费转化漏斗", async ({ page 
   await expect(page.getByRole("heading", { name: "留存快照" })).toHaveCount(0);
 });
 
+test("新用户变化趋势图仅在日报经营总览展示", async ({ page }) => {
+  await page.goto("/?grain=day&from=2020-09-28&to=2020-09-28");
+
+  const trend = page.getByRole("region", { name: "新用户变化趋势图" });
+  await expect(trend).toBeVisible();
+  await expect(trend.getByRole("heading", { name: "新用户变化趋势图" })).toBeVisible();
+  await expect(trend.getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();
+  await expect(trend.getByText(/激活人数 \/ 新用户 14 日留存人数 \/ 新用户 14 日留存率/)).toBeVisible();
+
+  await page.getByRole("button", { name: "周报" }).click();
+  await expect(page.getByRole("region", { name: "新用户变化趋势图" })).toHaveCount(0);
+});
+

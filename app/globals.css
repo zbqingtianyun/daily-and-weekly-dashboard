@@ -72,6 +72,7 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
 .delta.down { color: #7d657a; }
 .conversion-funnel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 .conversion-funnel { min-height: 0; padding-bottom: 24px; overflow: hidden; }
+.new-user-trend { min-height: 0; padding-bottom: 18px; }
 .conversion-funnel .panel-header { align-items: center; }
 .funnel-overall { display: flex; flex-direction: column; align-items: flex-end; padding: 9px 13px; border-radius: 13px; background: var(--blue-open); color: var(--blue); }
 .funnel-overall span { font-size: 9px; letter-spacing: .08em; }
@@ -192,6 +193,7 @@ kbd { margin-left: auto; display: flex; align-items: center; gap: 2px; padding: 
   .kpi-grid,.revenue-kpis { grid-template-columns: repeat(2, 1fr); }
   .kpi-card { min-height: 124px; padding: 14px; }
   .conversion-funnel { padding-inline: 14px; }
+  .new-user-trend { padding-inline: 14px; }
   .conversion-funnel .panel-header { align-items: flex-start; }
   .funnel-overall { flex: 0 0 auto; padding: 8px 10px; }
   .funnel-body { padding-inline: 0; }
