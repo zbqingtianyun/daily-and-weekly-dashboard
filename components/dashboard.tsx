@@ -2,12 +2,11 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  Activity, ArrowDownRight, ArrowUpRight, BarChart3, CalendarDays, ChevronDown,
-  CircleDollarSign, Clock3, Command, Database, LayoutDashboard, Search, Sparkles,
-  Target, TrendingUp, UsersRound, WalletCards, X
+  ArrowDownRight, ArrowUpRight, BarChart3, CalendarDays, CircleDollarSign,
+  Database, LayoutDashboard, Sparkles, Target, UsersRound, WalletCards
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { EChartsOption, SeriesOption } from "echarts";
 import Chart from "./chart";
 import type { DashboardDataset, DashboardRow, MetricDefinition, SnapshotMetadata } from "@/lib/types";
@@ -463,8 +462,6 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
   const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
   const [comparisonDate, setComparisonDate] = useState(parseQueryDate(params.get("compare"), defaultComparisonDate));
   const [comparisonEnabled, setComparisonEnabled] = useState(params.has("compare"));
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const definitions = useMemo(() => metricMap(catalog), [catalog]);
 
   const updateUrl = useCallback((updates: Record<string, string | null>) => {
@@ -473,18 +470,6 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   }, [params, pathname, router]);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setSearchOpen(true);
-      }
-      if (event.key === "Escape") setSearchOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
   const current = sourceRows.find((row) => row.period === selectedDate) ?? sourceRows.at(-1)!;
   const comparison = sourceRows.find((row) => row.period === comparisonDate) ?? sourceRows[0];
   const rows = [current];
@@ -492,8 +477,6 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
   const currentIndex = sourceRows.findIndex((row) => row.period === current.period);
   const previous = currentIndex > 0 ? sourceRows[currentIndex - 1] : undefined;
   const latest = sourceRows.at(-1)!.period;
-  const searched = catalog.filter((metric) => `${metric.label}${metric.key}${metric.description}`.toLowerCase().includes(search.toLowerCase())).slice(0, 12);
-
   const switchView = (next: View) => {
     setView(next);
     updateUrl({ view: next, from: selectedDate, to: selectedDate, compare: comparisonEnabled ? comparisonDate : null });
@@ -534,7 +517,6 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
 
       <main>
         <header className="topbar">
-          <button className="search-trigger" onClick={() => setSearchOpen(true)}><Search size={17} /><span>搜索指标</span><kbd><Command size={12} />K</kbd></button>
           <div className="top-controls">
             <label className="date-control single-date">
               <CalendarDays size={16} />
@@ -660,29 +642,6 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
           </AnimatePresence>
         </div>
       </main>
-
-      <AnimatePresence>
-        {searchOpen && (
-          <motion.div className="search-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={() => setSearchOpen(false)}>
-            <motion.div className="command-menu" initial={{ scale: 0.98, y: -12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.98, y: -8 }} onMouseDown={(event) => event.stopPropagation()}>
-              <div className="command-input"><Search size={19} /><input autoFocus placeholder="搜索指标、口径或业务模块…" value={search} onChange={(event) => setSearch(event.target.value)} /><button onClick={() => setSearchOpen(false)}><X size={17} /></button></div>
-              <div className="command-results">
-                {searched.map((metric) => (
-                  <button key={metric.key} onClick={() => {
-                    const target: View = metric.group === "growth" || metric.group === "retention" ? "growth" : metric.group === "revenue" ? "revenue" : "conversion";
-                    switchView(target); setSearchOpen(false); setSearch("");
-                  }}>
-                    <span className="result-icon">{metric.group === "revenue" ? <WalletCards size={16} /> : metric.group === "retention" ? <TrendingUp size={16} /> : metric.group === "engagement" ? <Clock3 size={16} /> : <Activity size={16} />}</span>
-                    <span><strong>{metric.label}</strong><small>{metric.description}</small></span>
-                    <ChevronDown size={15} />
-                  </button>
-                ))}
-              </div>
-              <footer><span>↑↓ 浏览</span><span>Enter 跳转</span><span>Esc 关闭</span></footer>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

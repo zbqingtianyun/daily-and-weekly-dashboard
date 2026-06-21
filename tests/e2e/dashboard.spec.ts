@@ -23,12 +23,15 @@ test("增长与收入页面不再展示旧图表", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "客单价" })).toHaveCount(0);
 });
 
-test("指标搜索可通过键盘打开", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === "mobile", "移动端不提供 Ctrl+K 键盘入口");
+test("所有业务页面均不展示指标搜索", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "经营总览" })).toBeVisible();
-  await page.keyboard.press("Control+K");
-  await expect(page.getByPlaceholder("搜索指标、口径或业务模块…")).toBeVisible();
+  await expect(page.getByText("搜索指标", { exact: true })).toHaveCount(0);
+  await expect(page.getByPlaceholder("搜索指标、口径或业务模块…")).toHaveCount(0);
+
+  for (const view of ["增长与留存", "收入与付费", "业务转化"]) {
+    await page.getByRole("button", { name: view }).click();
+    await expect(page.getByText("搜索指标", { exact: true })).toHaveCount(0);
+  }
 });
 
 test("日报可选择指定日期并展示该日数据", async ({ page }) => {
