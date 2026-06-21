@@ -632,10 +632,10 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                     rateKey="客单价"
                     rateLabel="客单价"
                     primaryAxisName="金额（元）"
-                    secondaryAxisName="人数"
+                    secondaryAxisName="人数 / 客单价（元）"
                     volumeAxisIndex={1}
                     comparisonAxisIndex={0}
-                    rateAxisIndex={0}
+                    rateAxisIndex={1}
                     rateMultiplier={1}
                     rateAxisSuffix=""
                   />
