@@ -9,7 +9,7 @@ test("仪表盘可切换业务页面", async ({ page }) => {
 
 test("增长与收入页面不再展示旧图表", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "增长与留存" }).click();
+  await page.getByRole("button", { name: "留存与活跃" }).click();
   await expect(page.getByRole("heading", { name: "用户增长趋势" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "当前留存状态" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "新用户留存趋势" })).toHaveCount(0);
@@ -28,7 +28,7 @@ test("所有业务页面均不展示指标搜索", async ({ page }) => {
   await expect(page.getByText("搜索指标", { exact: true })).toHaveCount(0);
   await expect(page.getByPlaceholder("搜索指标、口径或业务模块…")).toHaveCount(0);
 
-  for (const view of ["增长与留存", "收入与付费", "业务转化"]) {
+  for (const view of ["留存与活跃", "收入与付费", "业务转化"]) {
     await page.getByRole("button", { name: view }).click();
     await expect(page.getByText("搜索指标", { exact: true })).toHaveCount(0);
   }

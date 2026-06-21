@@ -27,14 +27,14 @@ const COLORS = {
 
 const NAV = [
   { id: "overview" as const, label: "经营总览", icon: LayoutDashboard },
-  { id: "growth" as const, label: "增长与留存", icon: UsersRound },
+  { id: "growth" as const, label: "留存与活跃", icon: UsersRound },
   { id: "revenue" as const, label: "收入与付费", icon: WalletCards },
   { id: "conversion" as const, label: "业务转化", icon: Target }
 ];
 
 const VIEWS: Record<View, { eyebrow: string; title: string; description: string }> = {
   overview: { eyebrow: "EXECUTIVE PULSE", title: "经营总览", description: "从活跃、留存与付费三个角度，读取当前经营脉搏。" },
-  growth: { eyebrow: "AUDIENCE HEALTH", title: "增长与留存", description: "观察新用户质量、活跃深度，以及留存指标的成熟状态。" },
+  growth: { eyebrow: "AUDIENCE HEALTH", title: "留存与活跃", description: "观察新用户质量、活跃深度，以及留存指标的成熟状态。" },
   revenue: { eyebrow: "COMMERCIAL SIGNAL", title: "收入与付费", description: "拆解收入结构、付费规模与客单价的周期变化。" },
   conversion: { eyebrow: "JOURNEY SIGNAL", title: "业务转化", description: "按真实字段查看业务阶段与转化率，不制造虚假的严格漏斗。" }
 };
