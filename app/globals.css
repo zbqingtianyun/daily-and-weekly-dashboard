@@ -103,6 +103,7 @@ main { min-width: 0; }
 .funnel-stage-2 { background: #527eea; }
 .funnel-stage-3 { background: #8ba8ee; color: #142958; }
 .funnel-stage-4 { background: #c7d6f8; color: #142958; }
+.funnel-stage-5 { background: #e8eefc; color: #142958; }
 .funnel-stage span { font-size: 12px; font-weight: 650; letter-spacing: .01em; }
 .funnel-stage strong { font-size: clamp(21px, 2.2vw, 30px); font-variant-numeric: tabular-nums; }
 .funnel-stage-values { display: grid; grid-template-columns: repeat(2, minmax(0, auto)); align-items: end; gap: clamp(14px, 3vw, 34px); }
@@ -223,6 +224,7 @@ main { min-width: 0; }
   .funnel-stage-2 { width: 88% !important; }
   .funnel-stage-3 { width: 72% !important; }
   .funnel-stage-4 { width: 56% !important; }
+  .funnel-stage-5 { width: 44% !important; }
   .funnel-stage span { max-width: 60%; font-size: 10px; }
   .funnel-stage-values { gap: 12px; }
   .funnel-stage-values small { font-size: 8px; }

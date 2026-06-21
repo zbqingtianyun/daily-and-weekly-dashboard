@@ -543,6 +543,8 @@ function FunnelCard({
   const comparisonOverallRate = comparisonStages ? conversionRate(comparisonStages.at(-1)?.value, comparisonStages[0].value) : null;
   const stageWidths = stages.length === 2
     ? [100, 68]
+    : stages.length === 5
+      ? [100, 88, 76, 64, 52]
     : stages.length === 4
       ? [100, 86, 72, 58]
       : stages.map((_, index) => 100 - index * 22);
