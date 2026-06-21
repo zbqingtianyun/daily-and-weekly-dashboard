@@ -18,6 +18,7 @@ type View = "overview" | "growth" | "revenue" | "conversion";
 const COLORS = {
   blue: "#2f6bff",
   violet: "#7c5cfc",
+  pink: "#d94f86",
   gold: "#d89b31",
   ink: "#1d1d1f",
   slate: "#69707d",
@@ -241,8 +242,8 @@ function DailyDualAxisTrendChart({
           smooth: 0.25,
           showSymbol: false,
           connectNulls: false,
-          lineStyle: { width: 2.5, color: COLORS.violet },
-          itemStyle: { color: COLORS.violet },
+          lineStyle: { width: 2.5, color: COLORS.pink },
+          itemStyle: { color: COLORS.pink },
           data: rows.map((row) => isMature(row, latest, maturityDays) && row[comparisonKey] !== null ? Number(row[comparisonKey]) : null)
         },
         {
