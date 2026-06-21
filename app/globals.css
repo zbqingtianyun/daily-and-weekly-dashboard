@@ -59,6 +59,8 @@ main { min-width: 0; }
 .freshness small { color: #8d9198; font-size: 10px; }
 .kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(135px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .revenue-kpis { grid-template-columns: repeat(6, 1fr); }
+.growth-kpis-top { grid-template-columns: repeat(4, minmax(135px, 1fr)); }
+.growth-kpis-bottom { grid-template-columns: repeat(6, minmax(135px, 1fr)); }
 .kpi-card, .panel, .stage-card { background: var(--surface); border: 1px solid rgba(29,29,31,.075); box-shadow: var(--shadow); backdrop-filter: blur(14px); }
 .kpi-card { border-radius: 18px; padding: 17px; min-height: 132px; display: flex; flex-direction: column; }
 .kpi-top { display: flex; align-items: center; justify-content: space-between; color: #737780; font-size: 11px; }
@@ -74,8 +76,14 @@ main { min-width: 0; }
 .delta.up { color: var(--blue); }
 .delta.down { color: #7d657a; }
 .conversion-funnel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.growth-funnel-stack { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px; }
 .conversion-funnel { min-height: 0; padding-bottom: 24px; overflow: hidden; }
 .new-user-trend { min-height: 0; padding-bottom: 18px; }
+.trend-comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-width: min(460px, 100%); }
+.trend-comparison-card { display: flex; flex-direction: column; align-items: flex-end; padding: 9px 12px; border-radius: 13px; background: var(--blue-open); color: var(--blue); }
+.trend-comparison-card.comparison { background: #f0f0ed; color: #626871; }
+.trend-comparison-card span { font-size: 9px; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.trend-comparison-card strong { margin-top: 3px; font-size: 12px; line-height: 1.45; font-variant-numeric: tabular-nums; text-align: right; }
 .conversion-funnel .panel-header { align-items: center; }
 .funnel-overall-grid { display: grid; grid-template-columns: 1fr; gap: 7px; }
 .funnel-overall-grid.comparing { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -90,6 +98,7 @@ main { min-width: 0; }
 .funnel-stage-1 { background: #255de0; }
 .funnel-stage-2 { background: #527eea; }
 .funnel-stage-3 { background: #8ba8ee; color: #142958; }
+.funnel-stage-4 { background: #c7d6f8; color: #142958; }
 .funnel-stage span { font-size: 12px; font-weight: 650; letter-spacing: .01em; }
 .funnel-stage strong { font-size: clamp(21px, 2.2vw, 30px); font-variant-numeric: tabular-nums; }
 .funnel-stage-values { display: grid; grid-template-columns: repeat(2, minmax(0, auto)); align-items: end; gap: clamp(14px, 3vw, 34px); }
@@ -153,6 +162,8 @@ main { min-width: 0; }
 @media (max-width: 1250px) {
   .kpi-grid { grid-template-columns: repeat(4, 1fr); }
   .revenue-kpis { grid-template-columns: repeat(3, 1fr); }
+  .growth-kpis-top { grid-template-columns: repeat(4, 1fr); }
+  .growth-kpis-bottom { grid-template-columns: repeat(3, 1fr); }
   .stage-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 950px) {
@@ -166,6 +177,7 @@ main { min-width: 0; }
   .topbar { padding-inline: 22px; }
   .content { padding-inline: 22px; }
   .conversion-funnel-grid { grid-template-columns: 1fr; }
+  .growth-kpis-top,.growth-kpis-bottom { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
   .app-shell { display: block; }
@@ -187,6 +199,9 @@ main { min-width: 0; }
   .kpi-card { min-height: 124px; padding: 14px; }
   .conversion-funnel { padding-inline: 14px; }
   .new-user-trend { padding-inline: 14px; }
+  .trend-comparison-grid { grid-template-columns: 1fr; min-width: 0; width: 100%; }
+  .trend-comparison-card { align-items: flex-start; }
+  .trend-comparison-card strong { text-align: left; }
   .conversion-funnel .panel-header { align-items: flex-start; }
   .funnel-overall { flex: 0 0 auto; padding: 8px 10px; }
   .funnel-body { padding-inline: 0; }
@@ -194,6 +209,7 @@ main { min-width: 0; }
   .funnel-stage-1 { width: 100% !important; }
   .funnel-stage-2 { width: 88% !important; }
   .funnel-stage-3 { width: 72% !important; }
+  .funnel-stage-4 { width: 56% !important; }
   .funnel-stage span { max-width: 60%; font-size: 10px; }
   .funnel-stage-values { gap: 12px; }
   .funnel-stage-values small { font-size: 8px; }

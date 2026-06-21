@@ -155,7 +155,11 @@ function DailyDualAxisTrendChart({
   comparisonAxisIndex = 0,
   rateAxisIndex = 1,
   rateMultiplier = 100,
-  rateAxisSuffix = "%"
+  rateAxisSuffix = "%",
+  currentComparisonRow,
+  comparisonComparisonRow,
+  currentComparisonLabel,
+  comparisonComparisonLabel
 }: {
   title: string;
   rows: DashboardRow[];
@@ -176,6 +180,10 @@ function DailyDualAxisTrendChart({
   rateAxisIndex?: number;
   rateMultiplier?: number;
   rateAxisSuffix?: string;
+  currentComparisonRow?: DashboardRow;
+  comparisonComparisonRow?: DashboardRow;
+  currentComparisonLabel?: string;
+  comparisonComparisonLabel?: string;
 }) {
   const option = useMemo<EChartsOption>(() => {
     const base = baseChart();
@@ -277,6 +285,26 @@ function DailyDualAxisTrendChart({
     };
   }, [comparisonAxisIndex, comparisonKey, comparisonLabel, latest, maturityDays, primaryAxisName, rateAxisIndex, rateAxisSuffix, rateDenominatorKey, rateKey, rateLabel, rateMultiplier, rateNumeratorKey, rows, secondaryAxisName, volumeAxisIndex, volumeKey, volumeLabel]);
 
+  const comparisonSummaryEnabled = currentComparisonRow !== undefined && comparisonComparisonRow !== undefined && currentComparisonLabel !== undefined && comparisonComparisonLabel !== undefined;
+  const rateValue = (row: DashboardRow) => {
+    if (rateNumeratorKey && rateDenominatorKey) {
+      return conversionRate(row[rateNumeratorKey], row[rateDenominatorKey]);
+    }
+    if (!rateKey || row[rateKey] === null) return null;
+    return Number(row[rateKey]);
+  };
+  const formatTrendValue = (value: number | null, kind: "volume" | "comparison" | "rate") => {
+    if (value === null || !Number.isFinite(value)) return "待成熟";
+    if (kind === "rate") return `${(value * rateMultiplier).toFixed(1)}${rateAxisSuffix}`;
+    return formatMetric(value, "integer", true);
+  };
+  const currentVolumeValue = currentComparisonRow?.[volumeKey] === null || currentComparisonRow?.[volumeKey] === undefined ? null : Number(currentComparisonRow[volumeKey]);
+  const comparisonVolumeValue = comparisonComparisonRow?.[volumeKey] === null || comparisonComparisonRow?.[volumeKey] === undefined ? null : Number(comparisonComparisonRow[volumeKey]);
+  const currentComparisonValue = currentComparisonRow && isMature(currentComparisonRow, latest, maturityDays) && currentComparisonRow[comparisonKey] !== null ? Number(currentComparisonRow[comparisonKey]) : null;
+  const previousComparisonValue = comparisonComparisonRow && isMature(comparisonComparisonRow, latest, maturityDays) && comparisonComparisonRow[comparisonKey] !== null ? Number(comparisonComparisonRow[comparisonKey]) : null;
+  const currentRateValue = currentComparisonRow && isMature(currentComparisonRow, latest, maturityDays) ? rateValue(currentComparisonRow) : null;
+  const previousRateValue = comparisonComparisonRow && isMature(comparisonComparisonRow, latest, maturityDays) ? rateValue(comparisonComparisonRow) : null;
+
   return (
     <section className="panel new-user-trend" aria-label={title}>
       <header className="panel-header">
@@ -284,6 +312,18 @@ function DailyDualAxisTrendChart({
           <h2>{title}</h2>
           <p>{rows[0]?.period} 至 {rows.at(-1)?.period} · {volumeLabel} / {comparisonLabel} / {rateLabel}</p>
         </div>
+        {comparisonSummaryEnabled && (
+          <div className="trend-comparison-grid">
+            <div className="trend-comparison-card">
+              <span>{currentComparisonLabel}</span>
+              <strong>{formatTrendValue(currentVolumeValue, "volume")} / {formatTrendValue(currentComparisonValue, "comparison")} / {formatTrendValue(currentRateValue, "rate")}</strong>
+            </div>
+            <div className="trend-comparison-card comparison">
+              <span>{comparisonComparisonLabel}</span>
+              <strong>{formatTrendValue(comparisonVolumeValue, "volume")} / {formatTrendValue(previousComparisonValue, "comparison")} / {formatTrendValue(previousRateValue, "rate")}</strong>
+            </div>
+          </div>
+        )}
       </header>
       <Chart option={option} height={380} />
     </section>
@@ -356,6 +396,11 @@ function FunnelCard({
   const comparisonRates = comparisonStages?.slice(1).map((stage, index) => conversionRate(stage.value, comparisonStages[index].value)) ?? [];
   const overallRate = conversionRate(stages.at(-1)?.value, stages[0].value);
   const comparisonOverallRate = comparisonStages ? conversionRate(comparisonStages.at(-1)?.value, comparisonStages[0].value) : null;
+  const stageWidths = stages.length === 2
+    ? [100, 68]
+    : stages.length === 4
+      ? [100, 86, 72, 58]
+      : stages.map((_, index) => 100 - index * 22);
   const formatFunnelValue = (value: number | null) => value === null || !Number.isFinite(value) ? "待成熟" : formatMetric(value, "integer");
   const formatFunnelRate = (value: number | null) => value === null ? "待成熟" : `${(value * 100).toFixed(1)}%`;
   return (
@@ -381,7 +426,7 @@ function FunnelCard({
       <div className="funnel-body">
         {stages.map((stage, index) => (
           <div className="funnel-step" key={stage.key}>
-            <div className={`funnel-stage funnel-stage-${index + 1}`} style={{ width: `${100 - index * (stages.length === 2 ? 32 : 22)}%` }}>
+            <div className={`funnel-stage funnel-stage-${index + 1}`} style={{ width: `${stageWidths[index]}%` }}>
               <span>{stage.label}</span>
               <div className="funnel-stage-values">
                 <div><small>{comparisonEnabled ? currentLabel : ""}</small><strong>{formatFunnelValue(stage.value)}</strong></div>
@@ -476,6 +521,7 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
   const [comparisonDate, setComparisonDate] = useState(parseQueryDate(params.get("compare"), defaultComparisonDate));
   const [comparisonEnabled, setComparisonEnabled] = useState(params.has("compare"));
   const definitions = useMemo(() => metricMap(catalog), [catalog]);
+  const comparisonAvailable = view === "overview" || view === "growth";
 
   const updateUrl = useCallback((updates: Record<string, string | null>) => {
     const next = new URLSearchParams(params.toString());
@@ -536,14 +582,14 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
               <span>查看日期</span>
               <input aria-label="日报日期" type="date" min={firstPeriod} max={lastPeriod} value={selectedDate} onChange={(event) => selectDate(event.target.value)} />
             </label>
-            {view === "overview" && comparisonEnabled && (
+            {comparisonAvailable && comparisonEnabled && (
               <label className="date-control comparison-date">
                 <CalendarDays size={16} />
                 <span>对比日期</span>
                 <input aria-label="对比日期" type="date" min={firstPeriod} max={lastPeriod} value={comparisonDate} onChange={(event) => selectComparisonDate(event.target.value)} />
               </label>
             )}
-            {view === "overview" && (
+            {comparisonAvailable && (
               <button className={`comparison-toggle${comparisonEnabled ? " active" : ""}`} aria-pressed={comparisonEnabled} onClick={toggleComparison}>
                 {comparisonEnabled ? "关闭数据对比" : "开启数据对比"}
               </button>
@@ -646,20 +692,37 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
 
               {view === "growth" && (
                 <>
-                  <div className="kpi-grid growth-kpis">
-                    {GROWTH_KPI_KEYS.map((key) => {
+                  <div className="kpi-grid growth-kpis-top">
+                    {GROWTH_KPI_KEYS.slice(0, 4).map((key) => {
                       const metric = definitions.get(key)!;
                       return <KpiCard
                         key={key}
                         metric={metric}
                         current={current[key]}
-                        previous={previous?.[key]}
+                        previous={comparisonEnabled ? comparison[key] : previous?.[key]}
+                        currentLabel={comparisonEnabled ? current.period : undefined}
+                        comparisonLabel={comparisonEnabled ? comparison.period : undefined}
                         mature={isMature(current, latest, metric.maturityDays)}
-                        comparisonMature={previous ? isMature(previous, latest, metric.maturityDays) : true}
+                        comparisonMature={comparisonEnabled ? isMature(comparison, latest, metric.maturityDays) : (previous ? isMature(previous, latest, metric.maturityDays) : true)}
                       />;
                     })}
                   </div>
-                  <div className="conversion-funnel-grid">
+                  <div className="kpi-grid growth-kpis-bottom">
+                    {GROWTH_KPI_KEYS.slice(4).map((key) => {
+                      const metric = definitions.get(key)!;
+                      return <KpiCard
+                        key={key}
+                        metric={metric}
+                        current={current[key]}
+                        previous={comparisonEnabled ? comparison[key] : previous?.[key]}
+                        currentLabel={comparisonEnabled ? current.period : undefined}
+                        comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                        mature={isMature(current, latest, metric.maturityDays)}
+                        comparisonMature={comparisonEnabled ? isMature(comparison, latest, metric.maturityDays) : (previous ? isMature(previous, latest, metric.maturityDays) : true)}
+                      />;
+                    })}
+                  </div>
+                  <div className="growth-funnel-stack">
                     <FunnelCard
                       title="新用户留存漏斗"
                       stages={[
@@ -668,7 +731,14 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                         { key: "new-user-7d", label: "新用户7日留存人数", value: isMature(current, latest, 7) && current["新用户7日留存人数"] !== null ? Number(current["新用户7日留存人数"]) : null },
                         { key: "new-user-14d", label: "新用户14日留存人数", value: isMature(current, latest, 14) && current["新用户14日留存人数"] !== null ? Number(current["新用户14日留存人数"]) : null }
                       ]}
+                      comparisonStages={comparisonEnabled ? [
+                        { key: "new-user-activation-compare", label: "激活人数", value: comparison["激活人数"] === null ? null : Number(comparison["激活人数"]) },
+                        { key: "new-user-1d-compare", label: "新用户次日留存人数", value: isMature(comparison, latest, 1) && comparison["新用户次日留存人数"] !== null ? Number(comparison["新用户次日留存人数"]) : null },
+                        { key: "new-user-7d-compare", label: "新用户7日留存人数", value: isMature(comparison, latest, 7) && comparison["新用户7日留存人数"] !== null ? Number(comparison["新用户7日留存人数"]) : null },
+                        { key: "new-user-14d-compare", label: "新用户14日留存人数", value: isMature(comparison, latest, 14) && comparison["新用户14日留存人数"] !== null ? Number(comparison["新用户14日留存人数"]) : null }
+                      ] : undefined}
                       currentLabel={current.period}
+                      comparisonLabel={comparisonEnabled ? comparison.period : undefined}
                     />
                     <FunnelCard
                       title="活跃用户留存漏斗"
@@ -678,7 +748,14 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                         { key: "active-user-7d", label: "活跃用户7日留存人数", value: isMature(current, latest, 7) && current["活跃用户7日留存人数"] !== null ? Number(current["活跃用户7日留存人数"]) : null },
                         { key: "active-user-14d", label: "活跃用户14日留存人数", value: isMature(current, latest, 14) && current["活跃用户14日留存人数"] !== null ? Number(current["活跃用户14日留存人数"]) : null }
                       ]}
+                      comparisonStages={comparisonEnabled ? [
+                        { key: "active-user-dau-compare", label: "DAU", value: comparison.DAU === null ? null : Number(comparison.DAU) },
+                        { key: "active-user-1d-compare", label: "活跃用户次日留存人数", value: isMature(comparison, latest, 1) && comparison["活跃用户次日留存人数"] !== null ? Number(comparison["活跃用户次日留存人数"]) : null },
+                        { key: "active-user-7d-compare", label: "活跃用户7日留存人数", value: isMature(comparison, latest, 7) && comparison["活跃用户7日留存人数"] !== null ? Number(comparison["活跃用户7日留存人数"]) : null },
+                        { key: "active-user-14d-compare", label: "活跃用户14日留存人数", value: isMature(comparison, latest, 14) && comparison["活跃用户14日留存人数"] !== null ? Number(comparison["活跃用户14日留存人数"]) : null }
+                      ] : undefined}
                       currentLabel={current.period}
+                      comparisonLabel={comparisonEnabled ? comparison.period : undefined}
                     />
                     <FunnelCard
                       title="活跃用户首次活跃漏斗"
@@ -686,9 +763,46 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                         { key: "first-active-dau", label: "DAU", value: current.DAU === null ? null : Number(current.DAU) },
                         { key: "first-active-users", label: "首次活跃人数", value: current["首次活跃人数"] === null ? null : Number(current["首次活跃人数"]) }
                       ]}
+                      comparisonStages={comparisonEnabled ? [
+                        { key: "first-active-dau-compare", label: "DAU", value: comparison.DAU === null ? null : Number(comparison.DAU) },
+                        { key: "first-active-users-compare", label: "首次活跃人数", value: comparison["首次活跃人数"] === null ? null : Number(comparison["首次活跃人数"]) }
+                      ] : undefined}
                       currentLabel={current.period}
+                      comparisonLabel={comparisonEnabled ? comparison.period : undefined}
                     />
                   </div>
+                  <DailyDualAxisTrendChart
+                    title="新用户留存趋势图"
+                    rows={dailyTrendRows}
+                    latest={daily.rows.at(-1)!.period}
+                    volumeKey="激活人数"
+                    volumeLabel="激活人数"
+                    comparisonKey="新用户14日留存人数"
+                    comparisonLabel="新用户 14 日留存人数"
+                    rateKey="新用户14日留存率"
+                    rateLabel="新用户 14 日留存率"
+                    maturityDays={14}
+                    currentComparisonRow={comparisonEnabled ? current : undefined}
+                    comparisonComparisonRow={comparisonEnabled ? comparison : undefined}
+                    currentComparisonLabel={comparisonEnabled ? current.period : undefined}
+                    comparisonComparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                  />
+                  <DailyDualAxisTrendChart
+                    title="活跃用户留存趋势图"
+                    rows={dailyTrendRows}
+                    latest={daily.rows.at(-1)!.period}
+                    volumeKey="DAU"
+                    volumeLabel="DAU"
+                    comparisonKey="活跃用户14日留存人数"
+                    comparisonLabel="活跃用户 14 日留存人数"
+                    rateKey="活跃用户14日留存率"
+                    rateLabel="活跃用户 14 日留存率"
+                    maturityDays={14}
+                    currentComparisonRow={comparisonEnabled ? current : undefined}
+                    comparisonComparisonRow={comparisonEnabled ? comparison : undefined}
+                    currentComparisonLabel={comparisonEnabled ? current.period : undefined}
+                    comparisonComparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                  />
                 </>
               )}
 
