@@ -131,6 +131,18 @@ test("经营总览支持选择两个日期对比指标卡和漏斗", async ({ pa
   await expect(paymentFunnel.getByText("2020-09-21", { exact: true }).first()).toBeVisible();
   await expect(paymentFunnel.getByText("1,392", { exact: true })).toBeVisible();
 
+  const newUserTrend = page.getByRole("region", { name: "新用户留存趋势图" });
+  await expect(newUserTrend.getByText("2020-09-28", { exact: true })).toBeVisible();
+  await expect(newUserTrend.getByText("2020-09-21", { exact: true })).toBeVisible();
+
+  const paymentTrend = page.getByRole("region", { name: "活跃用户付费趋势图" });
+  await expect(paymentTrend.getByText("2020-09-28", { exact: true })).toBeVisible();
+  await expect(paymentTrend.getByText("2020-09-21", { exact: true })).toBeVisible();
+
+  const unitPriceTrend = page.getByRole("region", { name: "客单价趋势图" });
+  await expect(unitPriceTrend.getByText("2020-09-28", { exact: true })).toBeVisible();
+  await expect(unitPriceTrend.getByText("2020-09-21", { exact: true })).toBeVisible();
+
   await page.getByLabel("对比日期").fill("2020-09-20");
   await expect(page).toHaveURL(/compare=2020-09-20/);
   await expect(page.getByRole("region", { name: "新用户留存趋势图" }).getByText(/2020-08-01 至 2020-09-28/)).toBeVisible();

@@ -9,7 +9,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import type { EChartsOption, SeriesOption } from "echarts";
 import Chart from "./chart";
-import type { DashboardDataset, DashboardRow, MetricDefinition, SnapshotMetadata } from "@/lib/types";
+import type { DashboardDataset, DashboardRow, MetricDefinition, MetricFormat, SnapshotMetadata } from "@/lib/types";
 import { conversionRate, delta, formatMetric, isMature, KPI_KEYS, metricMap, parseQueryDate } from "@/lib/metrics";
 
 type View = "overview" | "growth" | "revenue" | "conversion";
@@ -159,7 +159,10 @@ function DailyDualAxisTrendChart({
   currentComparisonRow,
   comparisonComparisonRow,
   currentComparisonLabel,
-  comparisonComparisonLabel
+  comparisonComparisonLabel,
+  volumeFormat = "integer",
+  comparisonValueFormat = "integer",
+  rateValueFormat
 }: {
   title: string;
   rows: DashboardRow[];
@@ -184,6 +187,9 @@ function DailyDualAxisTrendChart({
   comparisonComparisonRow?: DashboardRow;
   currentComparisonLabel?: string;
   comparisonComparisonLabel?: string;
+  volumeFormat?: MetricFormat;
+  comparisonValueFormat?: MetricFormat;
+  rateValueFormat?: MetricFormat;
 }) {
   const option = useMemo<EChartsOption>(() => {
     const base = baseChart();
@@ -295,8 +301,11 @@ function DailyDualAxisTrendChart({
   };
   const formatTrendValue = (value: number | null, kind: "volume" | "comparison" | "rate") => {
     if (value === null || !Number.isFinite(value)) return "待成熟";
-    if (kind === "rate") return `${(value * rateMultiplier).toFixed(1)}${rateAxisSuffix}`;
-    return formatMetric(value, "integer", true);
+    if (kind === "rate") {
+      if (rateValueFormat) return formatMetric(value, rateValueFormat, true);
+      return `${(value * rateMultiplier).toFixed(1)}${rateAxisSuffix}`;
+    }
+    return formatMetric(value, kind === "volume" ? volumeFormat : comparisonValueFormat, true);
   };
   const currentVolumeValue = currentComparisonRow?.[volumeKey] === null || currentComparisonRow?.[volumeKey] === undefined ? null : Number(currentComparisonRow[volumeKey]);
   const comparisonVolumeValue = comparisonComparisonRow?.[volumeKey] === null || comparisonComparisonRow?.[volumeKey] === undefined ? null : Number(comparisonComparisonRow[volumeKey]);
@@ -638,6 +647,10 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                     rateKey="新用户14日留存率"
                     rateLabel="新用户 14 日留存率"
                     maturityDays={14}
+                    currentComparisonRow={comparisonEnabled ? current : undefined}
+                    comparisonComparisonRow={comparisonEnabled ? comparison : undefined}
+                    currentComparisonLabel={comparisonEnabled ? current.period : undefined}
+                    comparisonComparisonLabel={comparisonEnabled ? comparison.period : undefined}
                   />
                   <DailyDualAxisTrendChart
                     title="活跃用户留存趋势图"
@@ -650,6 +663,10 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                     rateKey="活跃用户14日留存率"
                     rateLabel="活跃用户 14 日留存率"
                     maturityDays={14}
+                    currentComparisonRow={comparisonEnabled ? current : undefined}
+                    comparisonComparisonRow={comparisonEnabled ? comparison : undefined}
+                    currentComparisonLabel={comparisonEnabled ? current.period : undefined}
+                    comparisonComparisonLabel={comparisonEnabled ? comparison.period : undefined}
                   />
                   <DailyDualAxisTrendChart
                     title="活跃用户付费趋势图"
@@ -662,6 +679,10 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                     rateNumeratorKey="总付费人数"
                     rateDenominatorKey="DAU"
                     rateLabel="活跃用户付费率"
+                    currentComparisonRow={comparisonEnabled ? current : undefined}
+                    comparisonComparisonRow={comparisonEnabled ? comparison : undefined}
+                    currentComparisonLabel={comparisonEnabled ? current.period : undefined}
+                    comparisonComparisonLabel={comparisonEnabled ? comparison.period : undefined}
                   />
                   <DailyDualAxisTrendChart
                     title="客单价趋势图"
@@ -680,6 +701,12 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                     rateAxisIndex={1}
                     rateMultiplier={1}
                     rateAxisSuffix=""
+                    currentComparisonRow={comparisonEnabled ? current : undefined}
+                    comparisonComparisonRow={comparisonEnabled ? comparison : undefined}
+                    currentComparisonLabel={comparisonEnabled ? current.period : undefined}
+                    comparisonComparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                    comparisonValueFormat="currency"
+                    rateValueFormat="currency"
                   />
                 </>
               )}
