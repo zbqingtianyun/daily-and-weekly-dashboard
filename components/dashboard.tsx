@@ -32,6 +32,19 @@ const NAV = [
   { id: "conversion" as const, label: "业务转化", icon: Target }
 ];
 
+const GROWTH_KPI_KEYS = [
+  "激活人数",
+  "新用户次日留存率",
+  "新用户7日留存率",
+  "新用户14日留存率",
+  "DAU",
+  "首次活跃用户占比",
+  "活跃用户次日留存率",
+  "活跃用户7日留存率",
+  "活跃用户14日留存率",
+  "平均单日使用时长（分）"
+];
+
 const VIEWS: Record<View, { eyebrow: string; title: string; description: string }> = {
   overview: { eyebrow: "EXECUTIVE PULSE", title: "经营总览", description: "从活跃、留存与付费三个角度，读取当前经营脉搏。" },
   growth: { eyebrow: "AUDIENCE HEALTH", title: "留存与活跃", description: "观察新用户质量、活跃深度，以及留存指标的成熟状态。" },
@@ -629,6 +642,54 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                 <div className="kpi-grid revenue-kpis">
                   {["总付费金额", "总付费人数", "客单价", "付费金额_训练营", "付费金额_专栏", "付费金额_会员"].map((key) => <KpiCard key={key} metric={definitions.get(key)!} current={current[key]} previous={previous?.[key]} />)}
                 </div>
+              )}
+
+              {view === "growth" && (
+                <>
+                  <div className="kpi-grid growth-kpis">
+                    {GROWTH_KPI_KEYS.map((key) => {
+                      const metric = definitions.get(key)!;
+                      return <KpiCard
+                        key={key}
+                        metric={metric}
+                        current={current[key]}
+                        previous={previous?.[key]}
+                        mature={isMature(current, latest, metric.maturityDays)}
+                        comparisonMature={previous ? isMature(previous, latest, metric.maturityDays) : true}
+                      />;
+                    })}
+                  </div>
+                  <div className="conversion-funnel-grid">
+                    <FunnelCard
+                      title="新用户留存漏斗"
+                      stages={[
+                        { key: "new-user-activation", label: "激活人数", value: current["激活人数"] === null ? null : Number(current["激活人数"]) },
+                        { key: "new-user-1d", label: "新用户次日留存人数", value: isMature(current, latest, 1) && current["新用户次日留存人数"] !== null ? Number(current["新用户次日留存人数"]) : null },
+                        { key: "new-user-7d", label: "新用户7日留存人数", value: isMature(current, latest, 7) && current["新用户7日留存人数"] !== null ? Number(current["新用户7日留存人数"]) : null },
+                        { key: "new-user-14d", label: "新用户14日留存人数", value: isMature(current, latest, 14) && current["新用户14日留存人数"] !== null ? Number(current["新用户14日留存人数"]) : null }
+                      ]}
+                      currentLabel={current.period}
+                    />
+                    <FunnelCard
+                      title="活跃用户留存漏斗"
+                      stages={[
+                        { key: "active-user-dau", label: "DAU", value: current.DAU === null ? null : Number(current.DAU) },
+                        { key: "active-user-1d", label: "活跃用户次日留存人数", value: isMature(current, latest, 1) && current["活跃用户次日留存人数"] !== null ? Number(current["活跃用户次日留存人数"]) : null },
+                        { key: "active-user-7d", label: "活跃用户7日留存人数", value: isMature(current, latest, 7) && current["活跃用户7日留存人数"] !== null ? Number(current["活跃用户7日留存人数"]) : null },
+                        { key: "active-user-14d", label: "活跃用户14日留存人数", value: isMature(current, latest, 14) && current["活跃用户14日留存人数"] !== null ? Number(current["活跃用户14日留存人数"]) : null }
+                      ]}
+                      currentLabel={current.period}
+                    />
+                    <FunnelCard
+                      title="活跃用户首次活跃漏斗"
+                      stages={[
+                        { key: "first-active-dau", label: "DAU", value: current.DAU === null ? null : Number(current.DAU) },
+                        { key: "first-active-users", label: "首次活跃人数", value: current["首次活跃人数"] === null ? null : Number(current["首次活跃人数"]) }
+                      ]}
+                      currentLabel={current.period}
+                    />
+                  </div>
+                </>
               )}
 
               {view === "conversion" && (

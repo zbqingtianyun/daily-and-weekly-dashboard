@@ -23,6 +23,51 @@ test("增长与收入页面不再展示旧图表", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "客单价" })).toHaveCount(0);
 });
 
+test("留存与活跃页面展示新增指标卡", async ({ page }) => {
+  await page.goto("/?from=2020-09-28&to=2020-09-28");
+  await page.getByRole("button", { name: "留存与活跃" }).click();
+
+  await expect(page.getByRole("article")).toHaveCount(10);
+  await expect(page.getByRole("article").filter({ hasText: "激活人数" })).toBeVisible();
+  await expect(page.getByRole("article").filter({ hasText: "新用户 14 日留存率" })).toBeVisible();
+  await expect(page.getByRole("article").filter({ hasText: "首次活跃用户占比" })).toBeVisible();
+  await expect(page.getByRole("article").filter({ hasText: "平均单日使用时长" })).toBeVisible();
+});
+
+test("留存与活跃页面展示新用户留存漏斗", async ({ page }) => {
+  await page.goto("/?from=2020-09-28&to=2020-09-28");
+  await page.getByRole("button", { name: "留存与活跃" }).click();
+
+  const newUserFunnel = page.getByRole("region", { name: "新用户留存漏斗" });
+  await expect(newUserFunnel).toBeVisible();
+  await expect(newUserFunnel.getByText("激活人数", { exact: true })).toBeVisible();
+  await expect(newUserFunnel.getByText("新用户次日留存人数", { exact: true })).toBeVisible();
+  await expect(newUserFunnel.getByText("新用户7日留存人数", { exact: true })).toBeVisible();
+  await expect(newUserFunnel.getByText("新用户14日留存人数", { exact: true })).toBeVisible();
+});
+
+test("留存与活跃页面展示活跃用户留存漏斗", async ({ page }) => {
+  await page.goto("/?from=2020-09-28&to=2020-09-28");
+  await page.getByRole("button", { name: "留存与活跃" }).click();
+
+  const activeUserFunnel = page.getByRole("region", { name: "活跃用户留存漏斗" });
+  await expect(activeUserFunnel).toBeVisible();
+  await expect(activeUserFunnel.getByText("DAU", { exact: true })).toBeVisible();
+  await expect(activeUserFunnel.getByText("活跃用户次日留存人数", { exact: true })).toBeVisible();
+  await expect(activeUserFunnel.getByText("活跃用户7日留存人数", { exact: true })).toBeVisible();
+  await expect(activeUserFunnel.getByText("活跃用户14日留存人数", { exact: true })).toBeVisible();
+});
+
+test("留存与活跃页面展示活跃用户首次活跃漏斗", async ({ page }) => {
+  await page.goto("/?from=2020-09-28&to=2020-09-28");
+  await page.getByRole("button", { name: "留存与活跃" }).click();
+
+  const firstActiveFunnel = page.getByRole("region", { name: "活跃用户首次活跃漏斗" });
+  await expect(firstActiveFunnel).toBeVisible();
+  await expect(firstActiveFunnel.getByText("DAU", { exact: true })).toBeVisible();
+  await expect(firstActiveFunnel.getByText("首次活跃人数", { exact: true })).toBeVisible();
+});
+
 test("所有业务页面均不展示指标搜索", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("搜索指标", { exact: true })).toHaveCount(0);
