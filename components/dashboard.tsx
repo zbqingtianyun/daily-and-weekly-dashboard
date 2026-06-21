@@ -2,12 +2,12 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  ArrowDownRight, ArrowUpRight, BarChart3, CalendarDays, CircleDollarSign,
-  Database, LayoutDashboard, Sparkles, Target, UsersRound, WalletCards
+  ArrowDownRight, ArrowUpRight, CalendarDays,
+  Database, LayoutDashboard, Target, UsersRound, WalletCards
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import type { EChartsOption, SeriesOption } from "echarts";
+import type { EChartsOption } from "echarts";
 import Chart from "./chart";
 import type { DashboardDataset, DashboardRow, MetricDefinition, MetricFormat, SnapshotMetadata } from "@/lib/types";
 import { conversionRate, delta, formatMetric, isMature, KPI_KEYS, metricMap, parseQueryDate } from "@/lib/metrics";
@@ -43,6 +43,39 @@ const GROWTH_KPI_KEYS = [
   "活跃用户7日留存率",
   "活跃用户14日留存率",
   "平均单日使用时长（分）"
+];
+
+const CONVERSION_CAMP_KPI_KEYS = [
+  "曝光人数_训练营",
+  "点击人数_训练营_app",
+  "点击率_训练营_uv",
+  "浏览商详人数_训练营",
+  "预约人数_训练营",
+  "浏览商详-预约转化率_训练营",
+  "付费人数_训练营",
+  "付费金额_训练营",
+  "预约-付费转化率_训练营",
+  "单商详uv价值_训练营"
+];
+
+const CONVERSION_COLUMN_KPI_KEYS = [
+  "曝光人数_专栏",
+  "点击人数_专栏",
+  "点击率_专栏_uv",
+  "浏览商详人数_专栏",
+  "下单人数_专栏",
+  "浏览商详-下单转化率_专栏",
+  "付费人数_专栏",
+  "付费金额_专栏",
+  "下单-付费转化率_专栏",
+  "单商详uv价值_专栏"
+];
+
+const CONVERSION_MEMBER_KPI_KEYS = [
+  "浏览商详人数_会员",
+  "领取会员人数",
+  "浏览商详-领取会员转化率_会员",
+  "点击支付人数_会员"
 ];
 
 const VIEWS: Record<View, { eyebrow: string; title: string; description: string }> = {
@@ -189,52 +222,6 @@ function baseChart(): EChartsOption {
     },
     dataZoom: [{ type: "inside", zoomOnMouseWheel: "shift", moveOnMouseMove: true }]
   };
-}
-
-function LineChart({ rows, keys, labels, percentKeys = [], secondaryKey }: { rows: DashboardRow[]; keys: string[]; labels?: string[]; percentKeys?: string[]; secondaryKey?: string }) {
-  const option = useMemo<EChartsOption>(() => {
-    const base = baseChart();
-    const series = keys.map((key, index): SeriesOption => ({
-      name: labels?.[index] ?? key,
-      type: "line",
-      smooth: 0.28,
-      showSymbol: false,
-      symbolSize: 6,
-      lineStyle: { width: index === 0 ? 3 : 2, type: index > 1 ? "dashed" : "solid" },
-      itemStyle: { color: [COLORS.blue, COLORS.violet, COLORS.gold][index] },
-      areaStyle: index === 0 ? { color: "rgba(47,107,255,.08)" } : undefined,
-      yAxisIndex: secondaryKey === key ? 1 : 0,
-      connectNulls: false,
-      data: rows.map((row) => {
-        const raw = row[key];
-        return raw === null ? null : Number(raw) * (percentKeys.includes(key) ? 100 : 1);
-      })
-    }));
-    return {
-      ...base,
-      xAxis: { ...(base.xAxis as object), data: rows.map((row) => row.period.slice(5)) },
-      yAxis: secondaryKey ? [
-        {
-          type: "value",
-          position: "left",
-          axisLine: { show: false },
-          axisTick: { show: false },
-          axisLabel: { color: "#8d929b", fontSize: 11 },
-          splitLine: { lineStyle: { color: COLORS.grid, type: "dashed" } }
-        },
-        {
-          type: "value",
-          position: "right",
-          axisLine: { show: false },
-          axisTick: { show: false },
-          axisLabel: { color: "#8d929b", fontSize: 11 },
-          splitLine: { show: false }
-        }
-      ] : base.yAxis,
-      series
-    };
-  }, [keys, labels, percentKeys, rows, secondaryKey]);
-  return <Chart option={option} />;
 }
 
 function DailyDualAxisTrendChart({
@@ -605,16 +592,19 @@ function FunnelCard({
   );
 }
 
+function toStageNumber(value: unknown) {
+  return value === null || value === undefined || value === "" ? null : Number(value);
+}
+
 function ConversionFunnels({ current, comparison, latest }: { current: DashboardRow; comparison?: DashboardRow; latest: string }) {
-  const toNumber = (value: unknown) => value === null || value === undefined || value === "" ? null : Number(value);
   const retentionStages = (row: DashboardRow) => [
-    { key: "retention-dau", label: "DAU", value: toNumber(row.DAU) },
-    { key: "retention-7d", label: "活跃用户 7 日留存人数", value: isMature(row, latest, 7) ? toNumber(row["活跃用户7日留存人数"]) : null },
-    { key: "retention-14d", label: "活跃用户 14 日留存人数", value: isMature(row, latest, 14) ? toNumber(row["活跃用户14日留存人数"]) : null }
+    { key: "retention-dau", label: "DAU", value: toStageNumber(row.DAU) },
+    { key: "retention-7d", label: "活跃用户 7 日留存人数", value: isMature(row, latest, 7) ? toStageNumber(row["活跃用户7日留存人数"]) : null },
+    { key: "retention-14d", label: "活跃用户 14 日留存人数", value: isMature(row, latest, 14) ? toStageNumber(row["活跃用户14日留存人数"]) : null }
   ];
   const paymentStages = (row: DashboardRow) => [
-    { key: "payment-dau", label: "DAU", value: toNumber(row.DAU) },
-    { key: "payment-total", label: "总付费人数", value: toNumber(row["总付费人数"]) }
+    { key: "payment-dau", label: "DAU", value: toStageNumber(row.DAU) },
+    { key: "payment-total", label: "总付费人数", value: toStageNumber(row["总付费人数"]) }
   ];
 
   return (
@@ -637,32 +627,6 @@ function ConversionFunnels({ current, comparison, latest }: { current: Dashboard
   );
 }
 
-function StageCard({ title, icon, rows, stages, rates }: { title: string; icon: React.ReactNode; rows: DashboardRow[]; stages: string[]; rates: string[] }) {
-  const current = rows.at(-1)!;
-  const max = Math.max(...stages.map((key) => Number(current[key] ?? 0)), 1);
-  return (
-    <section className="stage-card">
-      <header><span className="stage-icon">{icon}</span><div><h2>{title}</h2><p>各阶段统计范围可能不同，不作为严格包含漏斗</p></div></header>
-      <div className="stage-list">
-        {stages.map((key) => {
-          const value = current[key];
-          return (
-            <div className="stage-row" key={key}>
-              <span>{key.replace(/_.*$/, "").replace("app", "")}</span>
-              <div><i style={{ width: value === null ? "0%" : `${Math.max((Number(value) / max) * 100, 2)}%` }} /></div>
-              <strong>{formatMetric(value, "integer", true)}</strong>
-            </div>
-          );
-        })}
-      </div>
-      <div className="rate-grid">
-        {rates.map((key) => <div key={key}><span>{key.replace(/_.*$/, "")}</span><strong>{formatMetric(current[key], "percent")}</strong></div>)}
-      </div>
-      <div className="mini-trend"><LineChart rows={rows.slice(-14)} keys={[stages.at(-1)!]} /></div>
-    </section>
-  );
-}
-
 export default function Dashboard({ daily, catalog, metadata }: { daily: DashboardDataset; catalog: MetricDefinition[]; metadata: SnapshotMetadata }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -679,7 +643,7 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
   const [comparisonDate, setComparisonDate] = useState(parseQueryDate(params.get("compare"), defaultComparisonDate));
   const [comparisonEnabled, setComparisonEnabled] = useState(params.has("compare"));
   const definitions = useMemo(() => metricMap(catalog), [catalog]);
-  const comparisonAvailable = view === "overview" || view === "growth" || view === "revenue";
+  const comparisonAvailable = view === "overview" || view === "growth" || view === "revenue" || view === "conversion";
 
   const updateUrl = useCallback((updates: Record<string, string | null>) => {
     const next = new URLSearchParams(params.toString());
@@ -689,7 +653,6 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
 
   const current = sourceRows.find((row) => row.period === selectedDate) ?? sourceRows.at(-1)!;
   const comparison = sourceRows.find((row) => row.period === comparisonDate) ?? sourceRows[0];
-  const rows = [current];
   const dailyTrendRows = useMemo(() => daily.rows.filter((row) => row.period <= current.period), [current.period, daily.rows]);
   const currentIndex = sourceRows.findIndex((row) => row.period === current.period);
   const previous = currentIndex > 0 ? sourceRows[currentIndex - 1] : undefined;
@@ -1074,11 +1037,126 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
               )}
 
               {view === "conversion" && (
-                <div className="stage-grid">
-                  <StageCard title="训练营" icon={<Sparkles size={19} />} rows={rows} stages={["曝光人数_训练营", "点击人数_训练营_app", "浏览商详人数_训练营", "预约人数_训练营", "付费人数_训练营"]} rates={["点击率_训练营_uv", "浏览商详-预约转化率_训练营", "预约-付费转化率_训练营"]} />
-                  <StageCard title="专栏" icon={<BarChart3 size={19} />} rows={rows} stages={["曝光人数_专栏", "点击人数_专栏", "浏览商详人数_专栏", "下单人数_专栏", "付费人数_专栏"]} rates={["点击率_专栏_uv", "浏览商详-下单转化率_专栏", "下单-付费转化率_专栏"]} />
-                  <StageCard title="会员" icon={<CircleDollarSign size={19} />} rows={rows} stages={["浏览商详人数_会员", "领取会员人数", "点击支付人数_会员", "付费人数_会员"]} rates={["浏览商详-领取会员转化率_会员"]} />
-                </div>
+                <section className="empty-panel">
+                  <h2>业务转化看板</h2>
+                  <p>该看板下的图表已移除，当前保留训练营、专栏与会员核心转化指标卡。</p>
+                  <h3 className="conversion-group-title">训练营</h3>
+                  <div className="kpi-grid conversion-kpis">
+                    {CONVERSION_CAMP_KPI_KEYS.map((key) => {
+                      const metric = definitions.get(key)!;
+                      return (
+                        <KpiCard
+                          key={key}
+                          metric={metric}
+                          current={current[key]}
+                          previous={comparisonEnabled ? comparison[key] : undefined}
+                          currentLabel={comparisonEnabled ? current.period : undefined}
+                          comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                          mature={isMature(current, latest, metric.maturityDays)}
+                          comparisonMature={isMature(comparison, latest, metric.maturityDays)}
+                        />
+                      );
+                    })}
+                  </div>
+                  <h3 className="conversion-group-title">专栏</h3>
+                  <div className="kpi-grid conversion-kpis">
+                    {CONVERSION_COLUMN_KPI_KEYS.map((key) => {
+                      const metric = definitions.get(key)!;
+                      return (
+                        <KpiCard
+                          key={key}
+                          metric={metric}
+                          current={current[key]}
+                          previous={comparisonEnabled ? comparison[key] : undefined}
+                          currentLabel={comparisonEnabled ? current.period : undefined}
+                          comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                          mature={isMature(current, latest, metric.maturityDays)}
+                          comparisonMature={isMature(comparison, latest, metric.maturityDays)}
+                        />
+                      );
+                    })}
+                  </div>
+                  <h3 className="conversion-group-title">会员</h3>
+                  <div className="kpi-grid conversion-kpis">
+                    {CONVERSION_MEMBER_KPI_KEYS.map((key) => {
+                      const metric = definitions.get(key)!;
+                      return (
+                        <KpiCard
+                          key={key}
+                          metric={metric}
+                          current={current[key]}
+                          previous={comparisonEnabled ? comparison[key] : undefined}
+                          currentLabel={comparisonEnabled ? current.period : undefined}
+                          comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                          mature={isMature(current, latest, metric.maturityDays)}
+                          comparisonMature={isMature(comparison, latest, metric.maturityDays)}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="conversion-funnel-row">
+                    <h3 className="conversion-group-title">训练营漏斗转化图</h3>
+                    <FunnelCard
+                      title="训练营漏斗转化图"
+                      stages={[
+                        { key: "camp-exposure", label: "曝光人数", value: toStageNumber(current["曝光人数_训练营"]) },
+                        { key: "camp-click", label: "点击人数", value: toStageNumber(current["点击人数_训练营_app"]) },
+                        { key: "camp-detail", label: "浏览商详人数", value: toStageNumber(current["浏览商详人数_训练营"]) },
+                        { key: "camp-reserve", label: "预约人数", value: toStageNumber(current["预约人数_训练营"]) },
+                        { key: "camp-pay", label: "付费人数", value: toStageNumber(current["付费人数_训练营"]) }
+                      ]}
+                      comparisonStages={comparisonEnabled ? [
+                        { key: "camp-exposure-compare", label: "曝光人数", value: toStageNumber(comparison["曝光人数_训练营"]) },
+                        { key: "camp-click-compare", label: "点击人数", value: toStageNumber(comparison["点击人数_训练营_app"]) },
+                        { key: "camp-detail-compare", label: "浏览商详人数", value: toStageNumber(comparison["浏览商详人数_训练营"]) },
+                        { key: "camp-reserve-compare", label: "预约人数", value: toStageNumber(comparison["预约人数_训练营"]) },
+                        { key: "camp-pay-compare", label: "付费人数", value: toStageNumber(comparison["付费人数_训练营"]) }
+                      ] : undefined}
+                      currentLabel={current.period}
+                      comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                    />
+                  </div>
+                  <div className="conversion-funnel-row">
+                    <h3 className="conversion-group-title">专栏漏斗转化图</h3>
+                    <FunnelCard
+                      title="专栏漏斗转化图"
+                      stages={[
+                        { key: "column-exposure", label: "曝光人数", value: toStageNumber(current["曝光人数_专栏"]) },
+                        { key: "column-click", label: "点击人数", value: toStageNumber(current["点击人数_专栏"]) },
+                        { key: "column-detail", label: "浏览商详人数", value: toStageNumber(current["浏览商详人数_专栏"]) },
+                        { key: "column-order", label: "下单人数", value: toStageNumber(current["下单人数_专栏"]) },
+                        { key: "column-pay", label: "付费人数", value: toStageNumber(current["付费人数_专栏"]) }
+                      ]}
+                      comparisonStages={comparisonEnabled ? [
+                        { key: "column-exposure-compare", label: "曝光人数", value: toStageNumber(comparison["曝光人数_专栏"]) },
+                        { key: "column-click-compare", label: "点击人数", value: toStageNumber(comparison["点击人数_专栏"]) },
+                        { key: "column-detail-compare", label: "浏览商详人数", value: toStageNumber(comparison["浏览商详人数_专栏"]) },
+                        { key: "column-order-compare", label: "下单人数", value: toStageNumber(comparison["下单人数_专栏"]) },
+                        { key: "column-pay-compare", label: "付费人数", value: toStageNumber(comparison["付费人数_专栏"]) }
+                      ] : undefined}
+                      currentLabel={current.period}
+                      comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                    />
+                  </div>
+                  <div className="conversion-funnel-row">
+                    <h3 className="conversion-group-title">会员漏斗转化图</h3>
+                    <FunnelCard
+                      title="会员漏斗转化图"
+                      stages={[
+                        { key: "member-detail", label: "浏览商详人数", value: toStageNumber(current["浏览商详人数_会员"]) },
+                        { key: "member-claim", label: "领取会员人数", value: toStageNumber(current["领取会员人数"]) },
+                        { key: "member-pay-click", label: "点击支付人数", value: toStageNumber(current["点击支付人数_会员"]) }
+                      ]}
+                      comparisonStages={comparisonEnabled ? [
+                        { key: "member-detail-compare", label: "浏览商详人数", value: toStageNumber(comparison["浏览商详人数_会员"]) },
+                        { key: "member-claim-compare", label: "领取会员人数", value: toStageNumber(comparison["领取会员人数"]) },
+                        { key: "member-pay-click-compare", label: "点击支付人数", value: toStageNumber(comparison["点击支付人数_会员"]) }
+                      ] : undefined}
+                      currentLabel={current.period}
+                      comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                    />
+                  </div>
+                </section>
               )}
             </motion.div>
           </AnimatePresence>

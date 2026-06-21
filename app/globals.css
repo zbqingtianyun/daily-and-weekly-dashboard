@@ -61,6 +61,7 @@ main { min-width: 0; }
 .revenue-kpis { grid-template-columns: repeat(3, 1fr); }
 .growth-kpis-top { grid-template-columns: repeat(4, minmax(135px, 1fr)); }
 .growth-kpis-bottom { grid-template-columns: repeat(6, minmax(135px, 1fr)); }
+.conversion-kpis { grid-template-columns: repeat(5, minmax(135px, 1fr)); margin-top: 18px; margin-bottom: 0; }
 .kpi-card, .panel, .stage-card { background: var(--surface); border: 1px solid rgba(29,29,31,.075); box-shadow: var(--shadow); backdrop-filter: blur(14px); }
 .kpi-card { border-radius: 18px; padding: 17px; min-height: 132px; display: flex; flex-direction: column; }
 .kpi-top { display: flex; align-items: center; justify-content: space-between; color: #737780; font-size: 11px; }
@@ -157,6 +158,11 @@ main { min-width: 0; }
 .loading-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .skeleton { background: linear-gradient(90deg,#ebebe7,#f7f7f4,#ebebe7); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 18px; }
 .skeleton-title { width: 280px; height: 54px; margin-bottom: 34px; }.skeleton-card { height: 130px; }.skeleton-chart { height: 400px; margin-top: 18px; }
+.empty-panel { background: rgba(255,255,255,.75); border: 1px solid rgba(29,29,31,.08); border-radius: 28px; padding: 28px; box-shadow: 0 18px 44px rgba(22,24,29,.06); }
+.empty-panel h2 { margin: 0 0 8px; font: 500 28px "Newsreader Variable", serif; color: var(--ink); }
+.empty-panel p { margin: 0; color: var(--muted); font-size: 14px; }
+.conversion-group-title { margin: 22px 0 10px; font-size: 15px; color: var(--ink); }
+.conversion-funnel-row { display: block; width: 100%; margin-top: 4px; }
 .error-page { min-height: 100vh; display: grid; place-content: center; text-align: center; padding: 30px; }
 .error-page h1 { font: 500 48px "Newsreader Variable", serif; margin: 0; }
 .error-page p { color: var(--muted); }
@@ -167,6 +173,7 @@ main { min-width: 0; }
   .revenue-kpis { grid-template-columns: repeat(3, 1fr); }
   .growth-kpis-top { grid-template-columns: repeat(4, 1fr); }
   .growth-kpis-bottom { grid-template-columns: repeat(3, 1fr); }
+  .conversion-kpis { grid-template-columns: repeat(4, 1fr); }
   .stage-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 950px) {
@@ -182,6 +189,7 @@ main { min-width: 0; }
   .conversion-funnel-grid { grid-template-columns: 1fr; }
   .pie-compare-grid { grid-template-columns: 1fr; }
   .growth-kpis-top,.growth-kpis-bottom { grid-template-columns: repeat(2, 1fr); }
+  .conversion-kpis { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
   .app-shell { display: block; }
@@ -200,6 +208,7 @@ main { min-width: 0; }
   .page-heading { display: block; }
   .freshness { align-items: flex-start; text-align: left; margin-top: 20px; }
   .kpi-grid,.revenue-kpis { grid-template-columns: repeat(2, 1fr); }
+  .conversion-kpis { grid-template-columns: repeat(2, 1fr); }
   .kpi-card { min-height: 124px; padding: 14px; }
   .conversion-funnel { padding-inline: 14px; }
   .new-user-trend { padding-inline: 14px; }
