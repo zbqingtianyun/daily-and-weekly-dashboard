@@ -26,6 +26,7 @@ export interface SnapshotMetadata {
   sourceDatabase: string;
   sources: {
     daily: { table: string; rowCount: number; minPeriod: string; maxPeriod: string };
+    weekly: { table: string; rowCount: number; minPeriod: string; maxPeriod: string };
   };
   validation: { passed: boolean; warnings: string[] };
 }

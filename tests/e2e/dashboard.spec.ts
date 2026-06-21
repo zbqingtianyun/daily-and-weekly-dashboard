@@ -16,11 +16,11 @@ test("增长与收入页面不再展示旧图表", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "活跃用户留存趋势图" })).toBeVisible();
 
   await page.getByRole("button", { name: "收入与付费" }).click();
-  await expect(page.getByRole("article")).toHaveCount(6);
+  await expect(page.getByRole("article")).toHaveCount(12);
   await expect(page.getByRole("heading", { name: "收入走势" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "产品收入结构" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "付费人数" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "客单价" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "付费人数", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "客单价", exact: true })).toHaveCount(0);
 });
 
 test("留存与活跃页面展示新增指标卡", async ({ page }) => {
@@ -115,6 +115,21 @@ test("日报可选择指定日期并展示该日数据", async ({ page }) => {
   await expect(page.getByRole("article").filter({ hasText: "DAU" }).getByText("564", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/from=2020-10-05/);
   await expect(page).toHaveURL(/to=2020-10-05/);
+});
+
+test("可切换周报且日期只能选择当周周一已有值", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("tab", { name: "周报" }).click();
+
+  const weeklyDate = page.getByLabel("周报日期");
+  await expect(weeklyDate).toBeVisible();
+  await expect(weeklyDate.locator("option")).toHaveCount(11);
+  await weeklyDate.selectOption("2020-09-28");
+
+  await expect(page.getByText("2020年9月28日")).toBeVisible();
+  await expect(page).toHaveURL(/period=weekly/);
+  await expect(page).toHaveURL(/from=2020-09-28/);
+  await expect(page.getByLabel("日报日期")).toHaveCount(0);
 });
 
 test("经营总览支持选择两个日期对比指标卡和漏斗", async ({ page }) => {

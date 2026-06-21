@@ -13,6 +13,7 @@ import type { DashboardDataset, DashboardRow, MetricDefinition, MetricFormat, Sn
 import { conversionRate, delta, formatMetric, isMature, KPI_KEYS, metricMap, parseQueryDate } from "@/lib/metrics";
 
 type View = "overview" | "growth" | "revenue" | "conversion";
+type PeriodMode = "daily" | "weekly";
 
 const COLORS = {
   blue: "#2f6bff",
@@ -629,20 +630,33 @@ function ConversionFunnels({ current, comparison, latest }: { current: Dashboard
   );
 }
 
-export default function Dashboard({ daily, catalog, metadata }: { daily: DashboardDataset; catalog: MetricDefinition[]; metadata: SnapshotMetadata }) {
+export default function Dashboard({
+  daily,
+  weekly,
+  catalog,
+  metadata
+}: {
+  daily: DashboardDataset;
+  weekly: DashboardDataset;
+  catalog: MetricDefinition[];
+  metadata: SnapshotMetadata;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
   const reduceMotion = useReducedMotion();
   const [view, setView] = useState<View>((params.get("view") as View) || "overview");
-  const sourceRows = daily.rows;
+  const [periodMode, setPeriodMode] = useState<PeriodMode>(params.get("period") === "weekly" ? "weekly" : "daily");
+  const sourceRows = periodMode === "weekly" ? weekly.rows : daily.rows;
   const firstPeriod = sourceRows[0].period;
   const lastPeriod = sourceRows.at(-1)!.period;
-  const initialSelectedDate = parseQueryDate(params.get("to") ?? params.get("from"), lastPeriod);
+  const requestedDate = parseQueryDate(params.get("to") ?? params.get("from"), lastPeriod);
+  const initialSelectedDate = sourceRows.some((row) => row.period === requestedDate) ? requestedDate : lastPeriod;
   const initialSelectedIndex = sourceRows.findIndex((row) => row.period === initialSelectedDate);
   const defaultComparisonDate = sourceRows[Math.max(0, initialSelectedIndex - 1)]?.period ?? firstPeriod;
   const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
-  const [comparisonDate, setComparisonDate] = useState(parseQueryDate(params.get("compare"), defaultComparisonDate));
+  const requestedComparisonDate = parseQueryDate(params.get("compare"), defaultComparisonDate);
+  const [comparisonDate, setComparisonDate] = useState(sourceRows.some((row) => row.period === requestedComparisonDate) ? requestedComparisonDate : defaultComparisonDate);
   const [comparisonEnabled, setComparisonEnabled] = useState(params.has("compare"));
   const definitions = useMemo(() => metricMap(catalog), [catalog]);
   const comparisonAvailable = view === "overview" || view === "growth" || view === "revenue" || view === "conversion";
@@ -655,35 +669,57 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
 
   const current = sourceRows.find((row) => row.period === selectedDate) ?? sourceRows.at(-1)!;
   const comparison = sourceRows.find((row) => row.period === comparisonDate) ?? sourceRows[0];
-  const dailyTrendRows = useMemo(() => daily.rows.filter((row) => row.period <= current.period), [current.period, daily.rows]);
+  const trendRows = useMemo(() => sourceRows.filter((row) => row.period <= current.period), [current.period, sourceRows]);
   const currentIndex = sourceRows.findIndex((row) => row.period === current.period);
   const previous = currentIndex > 0 ? sourceRows[currentIndex - 1] : undefined;
   const latest = sourceRows.at(-1)!.period;
   const switchView = (next: View) => {
     setView(next);
-    updateUrl({ view: next, from: selectedDate, to: selectedDate, compare: comparisonEnabled ? comparisonDate : null });
+    updateUrl({ view: next, period: periodMode === "weekly" ? "weekly" : null, from: selectedDate, to: selectedDate, compare: comparisonEnabled ? comparisonDate : null });
   };
 
   const selectDate = (date: string) => {
+    if (!sourceRows.some((row) => row.period === date)) return;
     setSelectedDate(date);
-    updateUrl({ view, from: date, to: date, compare: comparisonEnabled ? comparisonDate : null });
+    updateUrl({ view, period: periodMode === "weekly" ? "weekly" : null, from: date, to: date, compare: comparisonEnabled ? comparisonDate : null });
   };
 
   const selectComparisonDate = (date: string) => {
+    if (!sourceRows.some((row) => row.period === date)) return;
     setComparisonDate(date);
-    updateUrl({ view, from: selectedDate, to: selectedDate, compare: date });
+    updateUrl({ view, period: periodMode === "weekly" ? "weekly" : null, from: selectedDate, to: selectedDate, compare: date });
   };
 
   const toggleComparison = () => {
     const next = !comparisonEnabled;
     setComparisonEnabled(next);
-    updateUrl({ view, from: selectedDate, to: selectedDate, compare: next ? comparisonDate : null });
+    updateUrl({ view, period: periodMode === "weekly" ? "weekly" : null, from: selectedDate, to: selectedDate, compare: next ? comparisonDate : null });
+  };
+
+  const switchPeriodMode = (nextMode: PeriodMode) => {
+    if (nextMode === periodMode) return;
+    const nextRows = nextMode === "weekly" ? weekly.rows : daily.rows;
+    const nextSelectedDate = nextRows.some((row) => row.period === selectedDate) ? selectedDate : nextRows.at(-1)!.period;
+    const selectedIndex = nextRows.findIndex((row) => row.period === nextSelectedDate);
+    const nextComparisonDate = nextRows.some((row) => row.period === comparisonDate)
+      ? comparisonDate
+      : nextRows[Math.max(0, selectedIndex - 1)]?.period ?? nextRows[0].period;
+    setPeriodMode(nextMode);
+    setSelectedDate(nextSelectedDate);
+    setComparisonDate(nextComparisonDate);
+    updateUrl({
+      view,
+      period: nextMode === "weekly" ? "weekly" : null,
+      from: nextSelectedDate,
+      to: nextSelectedDate,
+      compare: comparisonEnabled ? nextComparisonDate : null
+    });
   };
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand-mark"><span>脉</span><div><strong>工作数据中心</strong><small>Daily intelligence</small></div></div>
+        <div className="brand-mark"><span>脉</span><div><strong>工作数据中心</strong><small>Period intelligence</small></div></div>
         <nav aria-label="主导航">
           {NAV.map((item) => {
             const Icon = item.icon;
@@ -692,24 +728,40 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
         </nav>
         <div className="sidebar-note">
           <Database size={17} />
-          <div><span>数据快照</span><strong>{metadata.sources.daily.rowCount} 个自然日</strong></div>
+          <div><span>数据快照</span><strong>{periodMode === "daily" ? `${metadata.sources.daily.rowCount} 个自然日` : `${metadata.sources.weekly.rowCount} 个自然周`}</strong></div>
         </div>
         <footer><span className="status-dot" /> 已通过数据校验</footer>
       </aside>
 
       <main>
         <header className="topbar">
+          <div className="period-tabs" role="tablist" aria-label="报表周期">
+            <button role="tab" aria-selected={periodMode === "daily"} className={periodMode === "daily" ? "active" : ""} onClick={() => switchPeriodMode("daily")}>日报</button>
+            <button role="tab" aria-selected={periodMode === "weekly"} className={periodMode === "weekly" ? "active" : ""} onClick={() => switchPeriodMode("weekly")}>周报</button>
+          </div>
           <div className="top-controls">
             <label className="date-control single-date">
               <CalendarDays size={16} />
-              <span>查看日期</span>
-              <input aria-label="日报日期" type="date" min={firstPeriod} max={lastPeriod} value={selectedDate} onChange={(event) => selectDate(event.target.value)} />
+              <span>{periodMode === "daily" ? "查看日期" : "当周周一"}</span>
+              {periodMode === "daily" ? (
+                <input aria-label="日报日期" type="date" min={firstPeriod} max={lastPeriod} value={selectedDate} onChange={(event) => selectDate(event.target.value)} />
+              ) : (
+                <select aria-label="周报日期" value={selectedDate} onChange={(event) => selectDate(event.target.value)}>
+                  {sourceRows.map((row) => <option key={row.period} value={row.period}>{row.period}</option>)}
+                </select>
+              )}
             </label>
             {comparisonAvailable && comparisonEnabled && (
               <label className="date-control comparison-date">
                 <CalendarDays size={16} />
                 <span>对比日期</span>
-                <input aria-label="对比日期" type="date" min={firstPeriod} max={lastPeriod} value={comparisonDate} onChange={(event) => selectComparisonDate(event.target.value)} />
+                {periodMode === "daily" ? (
+                  <input aria-label="对比日期" type="date" min={firstPeriod} max={lastPeriod} value={comparisonDate} onChange={(event) => selectComparisonDate(event.target.value)} />
+                ) : (
+                  <select aria-label="对比日期" value={comparisonDate} onChange={(event) => selectComparisonDate(event.target.value)}>
+                    {sourceRows.map((row) => <option key={row.period} value={row.period}>{row.period}</option>)}
+                  </select>
+                )}
               </label>
             )}
             {comparisonAvailable && (
@@ -724,14 +776,14 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
           <motion.header className="page-heading" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <div><p className="eyebrow">{VIEWS[view].eyebrow}</p><h1>{VIEWS[view].title}</h1><p>{VIEWS[view].description}</p></div>
             <div className="freshness">
-              <span>当前查看日期</span>
+              <span>{periodMode === "daily" ? "当前查看日期" : "当前查看周"}</span>
               <strong>{formatChineseDate(current.period)}</strong>
-              <small>自然日口径 · 数据最新至 {latest} · 快照生成于 {new Date(metadata.generatedAt).toLocaleString("zh-CN")}</small>
+              <small>{periodMode === "daily" ? "自然日口径" : "自然周口径 · 周期为当周周一"} · 数据最新至 {latest} · 快照生成于 {new Date(metadata.generatedAt).toLocaleString("zh-CN")}</small>
             </div>
           </motion.header>
 
           <AnimatePresence mode="wait">
-            <motion.div key={`${view}-${selectedDate}`} initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.24 }}>
+            <motion.div key={`${periodMode}-${view}-${selectedDate}`} initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.24 }}>
               {view === "overview" && (
                 <>
                   <div className="kpi-grid">
@@ -752,8 +804,8 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                   <ConversionFunnels current={current} comparison={comparisonEnabled ? comparison : undefined} latest={latest} />
                   <DailyDualAxisTrendChart
                     title="新用户留存趋势图"
-                    rows={dailyTrendRows}
-                    latest={daily.rows.at(-1)!.period}
+                    rows={trendRows}
+                    latest={latest}
                     volumeKey="激活人数"
                     volumeLabel="激活人数"
                     comparisonKey="新用户14日留存人数"
@@ -768,8 +820,8 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                   />
                   <DailyDualAxisTrendChart
                     title="活跃用户留存趋势图"
-                    rows={dailyTrendRows}
-                    latest={daily.rows.at(-1)!.period}
+                    rows={trendRows}
+                    latest={latest}
                     volumeKey="DAU"
                     volumeLabel="DAU"
                     comparisonKey="活跃用户14日留存人数"
@@ -784,8 +836,8 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                   />
                   <DailyDualAxisTrendChart
                     title="活跃用户付费趋势图"
-                    rows={dailyTrendRows}
-                    latest={daily.rows.at(-1)!.period}
+                    rows={trendRows}
+                    latest={latest}
                     volumeKey="DAU"
                     volumeLabel="DAU"
                     comparisonKey="总付费人数"
@@ -800,8 +852,8 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                   />
                   <DailyDualAxisTrendChart
                     title="客单价趋势图"
-                    rows={dailyTrendRows}
-                    latest={daily.rows.at(-1)!.period}
+                    rows={trendRows}
+                    latest={latest}
                     volumeKey="总付费人数"
                     volumeLabel="总付费人数"
                     comparisonKey="总付费金额"
@@ -1005,8 +1057,8 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                   </div>
                   <DailyDualAxisTrendChart
                     title="新用户留存趋势图"
-                    rows={dailyTrendRows}
-                    latest={daily.rows.at(-1)!.period}
+                    rows={trendRows}
+                    latest={latest}
                     volumeKey="激活人数"
                     volumeLabel="激活人数"
                     comparisonKey="新用户14日留存人数"
@@ -1021,8 +1073,8 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
                   />
                   <DailyDualAxisTrendChart
                     title="活跃用户留存趋势图"
-                    rows={dailyTrendRows}
-                    latest={daily.rows.at(-1)!.period}
+                    rows={trendRows}
+                    latest={latest}
                     volumeKey="DAU"
                     volumeLabel="DAU"
                     comparisonKey="活跃用户14日留存人数"
