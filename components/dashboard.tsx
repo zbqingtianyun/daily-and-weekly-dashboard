@@ -57,6 +57,107 @@ function formatChineseDate(period: string) {
   return `${year}年${month}月${day}日`;
 }
 
+function buildPieDistributionOption({
+  title,
+  entries,
+  valueFormat
+}: {
+  title: string;
+  entries: { label: string; value: number }[];
+  valueFormat: MetricFormat;
+}): EChartsOption {
+  const total = entries.reduce((sum, entry) => sum + entry.value, 0);
+  return {
+    animationDuration: 650,
+    animationEasing: "cubicOut",
+    textStyle: { fontFamily: "Manrope Variable, sans-serif", color: COLORS.slate },
+    tooltip: {
+      trigger: "item",
+      backgroundColor: "rgba(29,29,31,.94)",
+      borderWidth: 0,
+      padding: [10, 12],
+      textStyle: { color: "#fff", fontSize: 12 },
+      formatter: (params) => {
+        const item = (Array.isArray(params) ? params[0] : params) as { name?: string; value?: unknown; percent?: unknown };
+        const value = typeof item.value === "number" ? item.value : Number(item.value ?? 0);
+        const percent = typeof item.percent === "number" ? item.percent : 0;
+        return `${item.name ?? ""}<br/>${formatMetric(value, valueFormat, true)} · ${percent}%`;
+      }
+    },
+    legend: {
+      bottom: 0,
+      left: "center",
+      icon: "circle",
+      itemWidth: 8,
+      itemHeight: 8,
+      textStyle: { color: COLORS.slate, fontSize: 11 }
+    },
+    series: [
+      {
+        name: title,
+        type: "pie",
+        radius: ["42%", "72%"],
+        center: ["50%", "42%"],
+        stillShowZeroSum: false,
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderColor: "#ffffff",
+          borderWidth: 3
+        },
+        label: {
+          show: true,
+          color: COLORS.ink,
+          fontSize: 11,
+          formatter: (params) => `${params.name}\n${typeof params.percent === "number" ? params.percent : 0}%`
+        },
+        labelLine: {
+          length: 12,
+          length2: 10,
+          lineStyle: { color: "#b8bcc4" }
+        },
+        data: entries.map((entry, index) => ({
+          name: entry.label,
+          value: entry.value,
+          itemStyle: { color: [COLORS.blue, COLORS.violet, COLORS.gold][index] }
+        }))
+      }
+    ],
+    graphic: total > 0 ? [
+      {
+        type: "text",
+        left: "center",
+        top: "33%",
+        style: {
+          text: "总计",
+          fill: "#8d929b",
+          font: '11px "Manrope Variable", sans-serif'
+        }
+      },
+      {
+        type: "text",
+        left: "center",
+        top: "40%",
+        style: {
+          text: formatMetric(total, valueFormat, true),
+          fill: COLORS.ink,
+          font: '700 24px "Manrope Variable", sans-serif'
+        }
+      }
+    ] : [
+      {
+        type: "text",
+        left: "center",
+        top: "38%",
+        style: {
+          text: "暂无分布数据",
+          fill: "#8d929b",
+          font: '12px "Manrope Variable", sans-serif'
+        }
+      }
+    ]
+  };
+}
+
 function baseChart(): EChartsOption {
   return {
     animationDuration: 650,
@@ -339,6 +440,54 @@ function DailyDualAxisTrendChart({
   );
 }
 
+function PieDistributionChart({
+  title,
+  period,
+  entries,
+  valueFormat,
+  comparisonPeriod,
+  comparisonEntries
+}: {
+  title: string;
+  period: string;
+  entries: { label: string; value: number }[];
+  valueFormat: MetricFormat;
+  comparisonPeriod?: string;
+  comparisonEntries?: { label: string; value: number }[];
+}) {
+  const comparisonEnabled = comparisonPeriod !== undefined && comparisonEntries !== undefined;
+  const option = useMemo(() => buildPieDistributionOption({ title, entries, valueFormat }), [entries, title, valueFormat]);
+  const comparisonOption = useMemo(
+    () => comparisonEntries ? buildPieDistributionOption({ title, entries: comparisonEntries, valueFormat }) : undefined,
+    [comparisonEntries, title, valueFormat]
+  );
+
+  return (
+    <section className="panel new-user-trend" aria-label={title}>
+      <header className="panel-header">
+        <div>
+          <h2>{title}</h2>
+          <p>{comparisonEnabled ? `${period} vs ${comparisonPeriod} · 三类业务构成` : `${period} · 三类业务构成`}</p>
+        </div>
+      </header>
+      {comparisonEnabled && comparisonOption ? (
+        <div className="pie-compare-grid">
+          <div className="pie-compare-panel">
+            <span>{period}</span>
+            <Chart option={option} height={320} />
+          </div>
+          <div className="pie-compare-panel">
+            <span>{comparisonPeriod}</span>
+            <Chart option={comparisonOption} height={320} />
+          </div>
+        </div>
+      ) : (
+        <Chart option={option} height={360} />
+      )}
+    </section>
+  );
+}
+
 function KpiCard({
   metric,
   current,
@@ -530,7 +679,7 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
   const [comparisonDate, setComparisonDate] = useState(parseQueryDate(params.get("compare"), defaultComparisonDate));
   const [comparisonEnabled, setComparisonEnabled] = useState(params.has("compare"));
   const definitions = useMemo(() => metricMap(catalog), [catalog]);
-  const comparisonAvailable = view === "overview" || view === "growth";
+  const comparisonAvailable = view === "overview" || view === "growth" || view === "revenue";
 
   const updateUrl = useCallback((updates: Record<string, string | null>) => {
     const next = new URLSearchParams(params.toString());
@@ -712,9 +861,100 @@ export default function Dashboard({ daily, catalog, metadata }: { daily: Dashboa
               )}
 
               {view === "revenue" && (
-                <div className="kpi-grid revenue-kpis">
-                  {["总付费金额", "总付费人数", "客单价", "付费金额_训练营", "付费金额_专栏", "付费金额_会员"].map((key) => <KpiCard key={key} metric={definitions.get(key)!} current={current[key]} previous={previous?.[key]} />)}
-                </div>
+                <>
+                  <div className="kpi-grid revenue-kpis">
+                    {["总付费金额", "总付费人数", "客单价"].map((key) => {
+                      const metric = definitions.get(key)!;
+                      return <KpiCard
+                        key={key}
+                        metric={metric}
+                        current={current[key]}
+                        previous={comparisonEnabled ? comparison[key] : previous?.[key]}
+                        currentLabel={comparisonEnabled ? current.period : undefined}
+                        comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                        mature={isMature(current, latest, metric.maturityDays)}
+                        comparisonMature={comparisonEnabled ? isMature(comparison, latest, metric.maturityDays) : (previous ? isMature(previous, latest, metric.maturityDays) : true)}
+                      />;
+                    })}
+                  </div>
+                  <div className="kpi-grid revenue-kpis">
+                    {["付费人数_训练营", "付费金额_训练营", "客单价_训练营"].map((key) => {
+                      const metric = definitions.get(key)!;
+                      return <KpiCard
+                        key={key}
+                        metric={metric}
+                        current={current[key]}
+                        previous={comparisonEnabled ? comparison[key] : previous?.[key]}
+                        currentLabel={comparisonEnabled ? current.period : undefined}
+                        comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                        mature={isMature(current, latest, metric.maturityDays)}
+                        comparisonMature={comparisonEnabled ? isMature(comparison, latest, metric.maturityDays) : (previous ? isMature(previous, latest, metric.maturityDays) : true)}
+                      />;
+                    })}
+                  </div>
+                  <div className="kpi-grid revenue-kpis">
+                    {["付费人数_专栏", "付费金额_专栏", "客单价_专栏"].map((key) => {
+                      const metric = definitions.get(key)!;
+                      return <KpiCard
+                        key={key}
+                        metric={metric}
+                        current={current[key]}
+                        previous={comparisonEnabled ? comparison[key] : previous?.[key]}
+                        currentLabel={comparisonEnabled ? current.period : undefined}
+                        comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                        mature={isMature(current, latest, metric.maturityDays)}
+                        comparisonMature={comparisonEnabled ? isMature(comparison, latest, metric.maturityDays) : (previous ? isMature(previous, latest, metric.maturityDays) : true)}
+                      />;
+                    })}
+                  </div>
+                  <div className="kpi-grid revenue-kpis">
+                    {["付费人数_会员", "付费金额_会员", "客单价_会员"].map((key) => {
+                      const metric = definitions.get(key)!;
+                      return <KpiCard
+                        key={key}
+                        metric={metric}
+                        current={current[key]}
+                        previous={comparisonEnabled ? comparison[key] : previous?.[key]}
+                        currentLabel={comparisonEnabled ? current.period : undefined}
+                        comparisonLabel={comparisonEnabled ? comparison.period : undefined}
+                        mature={isMature(current, latest, metric.maturityDays)}
+                        comparisonMature={comparisonEnabled ? isMature(comparison, latest, metric.maturityDays) : (previous ? isMature(previous, latest, metric.maturityDays) : true)}
+                      />;
+                    })}
+                  </div>
+                  <PieDistributionChart
+                    title="付费人数分布"
+                    period={current.period}
+                    valueFormat="integer"
+                    entries={[
+                      { label: "训练营", value: Number(current["付费人数_训练营"] ?? 0) },
+                      { label: "专栏", value: Number(current["付费人数_专栏"] ?? 0) },
+                      { label: "会员", value: Number(current["付费人数_会员"] ?? 0) }
+                    ]}
+                    comparisonPeriod={comparisonEnabled ? comparison.period : undefined}
+                    comparisonEntries={comparisonEnabled ? [
+                      { label: "训练营", value: Number(comparison["付费人数_训练营"] ?? 0) },
+                      { label: "专栏", value: Number(comparison["付费人数_专栏"] ?? 0) },
+                      { label: "会员", value: Number(comparison["付费人数_会员"] ?? 0) }
+                    ] : undefined}
+                  />
+                  <PieDistributionChart
+                    title="付费金额分布"
+                    period={current.period}
+                    valueFormat="currency"
+                    entries={[
+                      { label: "训练营", value: Number(current["付费金额_训练营"] ?? 0) },
+                      { label: "专栏", value: Number(current["付费金额_专栏"] ?? 0) },
+                      { label: "会员", value: Number(current["付费金额_会员"] ?? 0) }
+                    ]}
+                    comparisonPeriod={comparisonEnabled ? comparison.period : undefined}
+                    comparisonEntries={comparisonEnabled ? [
+                      { label: "训练营", value: Number(comparison["付费金额_训练营"] ?? 0) },
+                      { label: "专栏", value: Number(comparison["付费金额_专栏"] ?? 0) },
+                      { label: "会员", value: Number(comparison["付费金额_会员"] ?? 0) }
+                    ] : undefined}
+                  />
+                </>
               )}
 
               {view === "growth" && (

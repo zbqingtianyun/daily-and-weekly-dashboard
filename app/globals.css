@@ -58,7 +58,7 @@ main { min-width: 0; }
 .freshness strong { font-size: 18px; margin: 4px 0; font-variant-numeric: tabular-nums; }
 .freshness small { color: #8d9198; font-size: 10px; }
 .kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(135px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.revenue-kpis { grid-template-columns: repeat(6, 1fr); }
+.revenue-kpis { grid-template-columns: repeat(3, 1fr); }
 .growth-kpis-top { grid-template-columns: repeat(4, minmax(135px, 1fr)); }
 .growth-kpis-bottom { grid-template-columns: repeat(6, minmax(135px, 1fr)); }
 .kpi-card, .panel, .stage-card { background: var(--surface); border: 1px solid rgba(29,29,31,.075); box-shadow: var(--shadow); backdrop-filter: blur(14px); }
@@ -79,6 +79,9 @@ main { min-width: 0; }
 .growth-funnel-stack { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px; }
 .conversion-funnel { min-height: 0; padding-bottom: 24px; overflow: hidden; }
 .new-user-trend { min-height: 0; padding-bottom: 18px; }
+.pie-compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.pie-compare-panel { min-width: 0; }
+.pie-compare-panel > span { display: block; margin-bottom: 8px; color: #7d818a; font-size: 10px; letter-spacing: .08em; font-variant-numeric: tabular-nums; text-align: center; }
 .trend-comparison-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-width: min(460px, 100%); }
 .trend-comparison-card { display: flex; flex-direction: column; align-items: flex-end; padding: 9px 12px; border-radius: 13px; background: var(--blue-open); color: var(--blue); }
 .trend-comparison-card.comparison { background: #f0f0ed; color: #626871; }
@@ -177,6 +180,7 @@ main { min-width: 0; }
   .topbar { padding-inline: 22px; }
   .content { padding-inline: 22px; }
   .conversion-funnel-grid { grid-template-columns: 1fr; }
+  .pie-compare-grid { grid-template-columns: 1fr; }
   .growth-kpis-top,.growth-kpis-bottom { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {
