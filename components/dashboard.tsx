@@ -778,7 +778,6 @@ export default function Dashboard({
             <div className="freshness">
               <span>{periodMode === "daily" ? "当前查看日期" : "当前查看周"}</span>
               <strong>{formatChineseDate(current.period)}</strong>
-              <small>{periodMode === "daily" ? "自然日口径" : "自然周口径 · 周期为当周周一"} · 数据最新至 {latest} · 快照生成于 {new Date(metadata.generatedAt).toLocaleString("zh-CN")}</small>
             </div>
           </motion.header>
 
