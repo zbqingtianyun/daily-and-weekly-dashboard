@@ -5,6 +5,7 @@ import {
   ArrowDownRight, ArrowUpRight, CalendarDays,
   Database, LayoutDashboard, Target, UsersRound, WalletCards
 } from "lucide-react";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import type { EChartsOption } from "echarts";
@@ -719,7 +720,10 @@ export default function Dashboard({
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand-mark"><span>脉</span><div><strong>工作数据中心</strong><small>Period intelligence</small></div></div>
+        <div className="brand-mark">
+          <Image className="brand-icon" src="/jingying.svg" alt="" width={42} height={42} />
+          <div><strong>经营</strong><small>经营分析看板</small></div>
+        </div>
         <nav aria-label="主导航">
           {NAV.map((item) => {
             const Icon = item.icon;
